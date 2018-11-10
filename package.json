@@ -1,0 +1,45 @@
+{
+  "name": "google-cloud-bucket",
+  "version": "0.0.1",
+  "description": "Nodejs package to add objects to a Google Cloud Bucket.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicolasdao/google-cloud-bucket.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nicolasdao/google-cloud-bucket/issues"
+  },
+  "keywords": [
+    "google",
+    "api",
+    "google apis",
+    "client",
+    "client library",
+    "bucket",
+    "storage",
+    "storage api"
+  ],
+  "homepage": "https://github.com/nicolasdao/google-cloud-bucket#readme",
+  "scripts": {
+    "lint": "eslint index.js src/ test/ --fix",
+    "push": "git push --follow-tags origin master",
+    "rls": "standard-version --release-as",
+    "test": "mocha",
+    "v": "node -e \"console.log(require('./package.json').version)\""
+  },
+  "author": "Nicolas Dao",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "eslint": "^4.19.1",
+    "mocha": "^5.2.0",
+    "standard-version": "^4.4.0"
+  },
+  "dependencies": {
+    "functional": "^1.0.0",
+    "google-auto-auth": "^0.10.1",
+    "node-fetch": "^2.2.0",
+    "shortid": "^2.2.13"
+  }
+}
