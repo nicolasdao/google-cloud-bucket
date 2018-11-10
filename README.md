@@ -48,7 +48,7 @@ const someObject = {
 	city: 'Sydney'
 }
 
-client.putObject(task_01, 'your-bucket/a-path/filename.json').then(res => console.log(res))
+client.putObject(someObject, 'your-bucket/a-path/filename.json').then(res => console.log(res))
 ```
 
 # This Is What We re Up To
