@@ -26,7 +26,15 @@ const _putObject = (object, filePath, token) => Promise.resolve(null).then(() =>
 		'Content-Type': 'application/json',
 		'Content-Length': content.length,
 		Authorization: `Bearer ${token}`
-	}, content)
+	}, content).then(({ status, data }) => {
+		if (status > 299) {
+			const message = ((data || {}).error || {}).message || JSON.stringify(data || {})
+			let e = new Error(message)
+			e.code = status
+			throw e 
+		}
+		return { status, data }
+	})
 })
 
 const createClient = ({ jsonKeyFile }) => {
@@ -39,7 +47,16 @@ const createClient = ({ jsonKeyFile }) => {
 
 	const putObject = (object, filePath) => getToken(auth).then(token => _putObject(object, filePath, token))
 
-	const retryPutObject = (object, filePath, options={}) => retry(() => putObject(object, filePath), () => true, { ignoreFailure: true, retryInterval: 800 })
+	const retryPutObject = (object, filePath, options={}) => retry(
+		() => putObject(object, filePath), 
+		() => true, 
+		err => {
+			if (err && err.message && err.message.indexOf('access') > 0)
+				return false
+			else
+				return true
+		},
+		{ ignoreFailure: true, retryInterval: 800 })
 		.catch(e => {
 			if (options.retryCatch)
 				return options.retryCatch(e)
