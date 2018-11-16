@@ -23,7 +23,7 @@
   "homepage": "https://github.com/nicolasdao/google-cloud-bucket#readme",
   "scripts": {
     "lint": "eslint index.js src/ test/ --fix",
-    "push": "git push --follow-tags origin master",
+    "push": "git push --follow-tags origin master && npm publish",
     "rls": "standard-version --release-as",
     "test": "mocha",
     "v": "node -e \"console.log(require('./package.json').version)\""
