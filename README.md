@@ -35,10 +35,10 @@ Before using this package, you must first:
 
 ```js
 const { join } = require('path')
-const createClient = require('google-cloud-bucket')
+const { client } = require('google-cloud-bucket')
 
-const client = createClient({
-	jsonKeyFile: join(__dirname, './service-account.json')
+const storage = client.new({ 
+	jsonKeyFile: join(__dirname, './service-account.json') 
 })
 
 const someObject = {
@@ -48,7 +48,9 @@ const someObject = {
 	city: 'Sydney'
 }
 
-client.putObject(someObject, 'your-bucket/a-path/filename.json').then(res => console.log(res))
+storage.insert(someObject, 'your-bucket/a-path/filename.json') // insert an object into a bucket 'a-path/filename.json' does not need to exist
+	.then(() => storage.get('your-bucket/a-path/filename.json')) // retrieve that new object
+	.then(res => console.log(JSON.stringify(res, null, ' ')))
 ```
 
 # This Is What We re Up To
