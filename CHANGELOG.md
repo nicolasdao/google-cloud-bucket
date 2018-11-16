@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.0"></a>
+# [0.1.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.0.2...v0.1.0) (2018-11-16)
+
+
+### Features
+
+* Add support for retrieving object from a bucket + update API ([855d52f](https://github.com/nicolasdao/google-cloud-bucket/commit/855d52f))
+
+
+
 <a name="0.0.2"></a>
 ## [0.0.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.0.1...v0.0.2) (2018-11-11)
 
