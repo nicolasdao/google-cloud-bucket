@@ -14,10 +14,14 @@ const _processResponse = res => res.json()
 const postData = (url, headers={}, body) => 
 	fetch(url, { method: 'POST', headers, body }).then(_processResponse)
 
+const putData = (url, headers={}, body) => 
+	fetch(url, { method: 'PUT', headers, body }).then(_processResponse)
+
 const getData = (url, headers={}) => 
 	fetch(url, { method: 'GET', headers }).then(_processResponse)
 
 module.exports = {
 	post: postData,
-	'get': getData
+	'get': getData,
+	put: putData
 }

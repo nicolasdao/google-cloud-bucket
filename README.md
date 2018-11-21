@@ -26,6 +26,8 @@ Before using this package, you must first:
 
 3. Have a Service Account set up with the following 2 roles:
 	- `roles/storage.objectCreator`
+	- `roles/storage.objectAdmin` (only if you want to update access to object)
+	- `roles/storage.admin` (only if you want to update access to an entire bucket)
 
 4. Get the JSON keys file for that Service Account above
 
@@ -48,9 +50,33 @@ const someObject = {
 	city: 'Sydney'
 }
 
+
+// ADDING AN OBJECT WITH PRIVATE ACCESS
 storage.insert(someObject, 'your-bucket/a-path/filename.json') // insert an object into a bucket 'a-path/filename.json' does not need to exist
 	.then(() => storage.get('your-bucket/a-path/filename.json')) // retrieve that new object
 	.then(res => console.log(JSON.stringify(res, null, ' ')))
+
+
+// ADDING A HTML PAGE WITH PUBLIC ACCESS (warning: Your service account must have the 'roles/storage.objectAdmin' role)
+const html = `
+<!doctype html>
+<html>
+	<body>
+		<h1>Hello Giiiiirls</h1>
+	</body>
+</html>`
+
+storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
+	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+
+// MAKING AN EXISTING OBJECT READ PUBLIC (warning: Your service account must have the 'roles/storage.objectAdmin' role)
+storage.makePublic('your-bucket/a-path/private.html')
+	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+
+// MAKING A BUCKET READ PUBLIC (warning: Your service account must have the 'roles/storage.admin' role)
+// Once a bucket is public, all content added to it (even when omitting the 'public' flag) is public
+storage.makePublic('your-bucket')
+	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
 ```
 
 # This Is What We re Up To

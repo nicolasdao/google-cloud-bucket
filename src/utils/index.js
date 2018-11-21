@@ -10,5 +10,6 @@
 module.exports = Object.assign(require('./core'), {
 	fetch: require('./fetch'),
 	functional: require('./functional'),
-	promise: require('./promise')
+	promise: require('./promise'),
+	urlHelper: require('./urlHelper')
 })
