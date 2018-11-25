@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.4"></a>
+## [0.1.4](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.1.3...v0.1.4) (2018-11-25)
+
+
+### Features
+
+* Add support for updating a bucket's config as well as gettnig that config ([8de1577](https://github.com/nicolasdao/google-cloud-bucket/commit/8de1577))
+
+
+
 <a name="0.1.3"></a>
 ## [0.1.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.1.2...v0.1.3) (2018-11-25)
 
