@@ -85,14 +85,14 @@ const createClient = ({ jsonKeyFile }) => {
 		insert: retryPutObject,
 		'get': retryGetObject,
 		makePublic,
-		config: (bucket) => Promise.resolve(null).then(() => {
+		config: (bucket) => {
 			if(!bucket)
 				throw new Error('Missing required \'bucket\' argument')
 			return {
 				'get': () => getBucket(bucket),
 				update: (config={}) => updateConfig(bucket, config)
 			}
-		})
+		}
 	}
 }
 
