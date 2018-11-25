@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.5"></a>
+## [0.1.5](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.1.4...v0.1.5) (2018-11-25)
+
+
+### Bug Fixes
+
+* storage.config should not return a promise ([f7ecc24](https://github.com/nicolasdao/google-cloud-bucket/commit/f7ecc24))
+
+
+
 <a name="0.1.4"></a>
 ## [0.1.4](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.1.3...v0.1.4) (2018-11-25)
 
