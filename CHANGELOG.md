@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.3"></a>
+## [0.1.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.1.2...v0.1.3) (2018-11-25)
+
+
+### Bug Fixes
+
+* The .xml extension uses the wrong mime type ([be4e826](https://github.com/nicolasdao/google-cloud-bucket/commit/be4e826))
+
+
+
 <a name="0.1.2"></a>
 ## [0.1.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.1.1...v0.1.2) (2018-11-25)
 
