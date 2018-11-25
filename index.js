@@ -57,14 +57,14 @@ const createClient = ({ jsonKeyFile }) => {
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
 
-	const putObject = (object, filePath) => getToken(auth).then(token => gcp.insert(object, filePath, token))
+	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options))
 	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token))
 	const makePublic = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.makePublic(bucket, file, token)
 	})
 
-	const retryPutObject = (object, filePath, options={}) => _retryFn(() => putObject(object, filePath), options)
+	const retryPutObject = (object, filePath, options={}) => _retryFn(() => putObject(object, filePath, options), options)
 		.then(res => {
 			if (options.public)
 				return makePublic(filePath).then(({ data:{ uri } }) => {

@@ -6,7 +6,12 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-const { fetch, urlHelper } = require('./utils')
+
+// Uploading data: https://cloud.google.com/storage/docs/json_api/v1/how-tos/upload
+// Best practices: https://cloud.google.com/storage/docs/json_api/v1/how-tos/performance
+// Object versioning: https://cloud.google.com/storage/docs/object-versioning
+
+const { fetch, urlHelper, obj: { merge } } = require('./utils')
 
 const BUCKET_UPLOAD_URL = (bucket, fileName) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=media&name=${encodeURIComponent(fileName)}`
 const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
@@ -17,18 +22,22 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 		throw new Error(`Parameter '${p}' is required.`)
 })
 
-const putObject = (object, filePath, token) => Promise.resolve(null).then(() => {
+const putObject = (object, filePath, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ object, filePath, token })
 	const payload = typeof(object) == 'string' ? object : JSON.stringify(object || {})
 	const [ bucket, ...names ] = filePath.split('/')
 
 	const { contentType } = urlHelper.getInfo(filePath)
 
-	return fetch.post(BUCKET_UPLOAD_URL(bucket, names.join('/')), {
-		'Content-Type': contentType || 'application/json',
+	let headers = merge(options.headers || {}, { 
 		'Content-Length': payload.length,
 		Authorization: `Bearer ${token}`
-	}, payload)
+	})
+
+	if (!headers['Content-Type'])
+		headers['Content-Type'] = contentType || 'application/json'
+
+	return fetch.post(BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, payload)
 })
 
 const getBucketFile = (bucket, filepath, token) => Promise.resolve(null).then(() => {
