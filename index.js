@@ -59,6 +59,8 @@ const createClient = ({ jsonKeyFile }) => {
 
 	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options))
 	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token))
+	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token))
+	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token))
 	const makePublic = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.makePublic(bucket, file, token)
@@ -82,7 +84,15 @@ const createClient = ({ jsonKeyFile }) => {
 	return {
 		insert: retryPutObject,
 		'get': retryGetObject,
-		makePublic
+		makePublic,
+		config: (bucket) => Promise.resolve(null).then(() => {
+			if(!bucket)
+				throw new Error('Missing required \'bucket\' argument')
+			return {
+				'get': () => getBucket(bucket),
+				update: (config={}) => updateConfig(bucket, config)
+			}
+		})
 	}
 }
 

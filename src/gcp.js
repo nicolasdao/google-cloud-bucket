@@ -40,8 +40,17 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 	return fetch.post(BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, payload)
 })
 
+const getBucket = (bucket, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+
+	return fetch.get(BUCKET_URL(bucket), {
+		Accept: 'application/json',
+		Authorization: `Bearer ${token}`
+	})
+})
+
 const getBucketFile = (bucket, filepath, token) => Promise.resolve(null).then(() => {
-	_validateRequiredParams({ filepath, token })
+	_validateRequiredParams({ bucket, filepath, token })
 
 	const { contentType } = urlHelper.getInfo(filepath)
 
@@ -112,11 +121,38 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 	}
 })
 
+const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+	if (!Object.keys(config).some(x => x))
+		return { status: 200, data: { message: 'Empty config. Nothing to update.' } }
+
+	const payload = JSON.stringify(config)
+
+	return fetch.patch(`${BUCKET_URL(bucket)}`, {
+		'Content-Type': 'application/json',
+		Authorization: `Bearer ${token}`
+	}, payload).then(({ status, data }) => {
+		if (status < 400) {
+			data = data || {}
+			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
+			return { status, data }
+		}
+
+		let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
+		e.code = status
+		e.data = data
+		throw e
+	})
+})
 
 module.exports = {
 	insert: putObject,
 	'get': getBucketFile,
-	makePublic
+	makePublic,
+	config: {
+		'get': getBucket,
+		update: updateConfig
+	}
 }
 
 

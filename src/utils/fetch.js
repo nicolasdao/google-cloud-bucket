@@ -17,11 +17,15 @@ const postData = (url, headers={}, body) =>
 const putData = (url, headers={}, body) => 
 	fetch(url, { method: 'PUT', headers, body }).then(_processResponse)
 
+const patchData = (url, headers={}, body) => 
+	fetch(url, { method: 'PATCH', headers, body }).then(_processResponse)
+
 const getData = (url, headers={}) => 
 	fetch(url, { method: 'GET', headers }).then(_processResponse)
 
 module.exports = {
 	post: postData,
 	'get': getData,
-	put: putData
+	put: putData,
+	patch: patchData
 }
