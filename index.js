@@ -61,15 +61,19 @@ const createClient = ({ jsonKeyFile }) => {
 	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token))
 	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token))
 	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token))
-	const makePublic = filePath => getToken(auth).then(token => {
+	const addPublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
-		return gcp.makePublic(bucket, file, token)
+		return gcp.addPublicAccess(bucket, file, token)
+	})
+	const removePublicAccess = filePath => getToken(auth).then(token => {
+		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
+		return gcp.removePublicAccess(bucket, file, token)
 	})
 
 	const retryPutObject = (object, filePath, options={}) => _retryFn(() => putObject(object, filePath, options), options)
 		.then(res => {
 			if (options.public)
-				return makePublic(filePath).then(({ data:{ uri } }) => {
+				return addPublicAccess(filePath).then(({ data:{ uri } }) => {
 					if (res && res.data)
 						res.data.uri = uri
 					return res
@@ -84,13 +88,16 @@ const createClient = ({ jsonKeyFile }) => {
 	return {
 		insert: retryPutObject,
 		'get': retryGetObject,
-		makePublic,
+		addPublicAccess,
+		removePublicAccess,
 		config: (bucket) => {
 			if(!bucket)
 				throw new Error('Missing required \'bucket\' argument')
 			return {
 				'get': () => getBucket(bucket),
-				update: (config={}) => updateConfig(bucket, config)
+				update: (config={}) => updateConfig(bucket, config),
+				addPublicAccess: () => addPublicAccess(bucket),
+				removePublicAccess: () => removePublicAccess(bucket)
 			}
 		}
 	}

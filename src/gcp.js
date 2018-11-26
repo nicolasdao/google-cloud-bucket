@@ -43,9 +43,22 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 const getBucket = (bucket, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
 
-	return fetch.get(BUCKET_URL(bucket), {
+	const getData = fetch.get(BUCKET_URL(bucket), {
 		Accept: 'application/json',
 		Authorization: `Bearer ${token}`
+	}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
+	const getIam = fetch.get(`${BUCKET_URL(bucket)}/iam`, {
+		Accept: 'application/json',
+		Authorization: `Bearer ${token}`
+	}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
+
+	return Promise.all([getData, getIam]).then(([bucketRes, iamRes]) => {
+		if (bucketRes && bucketRes.status < 400 && bucketRes.data) {
+			let data = bucketRes.data
+			data.iam = iamRes && iamRes.data ? iamRes.data : {}
+			return { status: bucketRes.status, data }
+		} else
+			return bucketRes
 	})
 })
 
@@ -68,6 +81,7 @@ const getBucketFile = (bucket, filepath, token) => Promise.resolve(null).then(()
 	})
 })
 
+// Doc: https://cloud.google.com/storage/docs/json_api/v1/
 const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
 
@@ -94,31 +108,104 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 			e.data = data
 			throw e
 		})
-	} else {
-		const payload = JSON.stringify({
-			bindings:[{
-				role: 'roles/storage.objectViewer',
-				members: ['allUsers']
-			}]
+	} else
+		return getBucket(bucket, token).then(({ data }) => {
+			const bindings = data && data.iam ? (data.iam.bindings || []) : []
+			const objectViewerBinding = bindings.find(b => b && b.role == 'roles/storage.objectViewer')
+			if (!objectViewerBinding)
+				bindings.push({
+					role: 'roles/storage.objectViewer',
+					members: ['allUsers']
+				})
+			else if (objectViewerBinding && !(objectViewerBinding.members || []).some(m => m == 'allUsers'))
+				objectViewerBinding.members.push('allUsers')
+			else 
+				return { status: 200, data: { message: 'The IAM binding role \'roles/storage.objectViewer\' for member \'allUsers\' has already been setup.' } }
+
+			const payload = JSON.stringify({ bindings })
+
+			return fetch.put(`${BUCKET_URL(bucket)}/iam`, {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`
+			}, payload).then(({ status, data }) => {
+				if (status < 400) {
+					data = data || {}
+					data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+					return { status, data }
+				}
+
+				console.log(JSON.stringify(data, null, ' '))
+
+				let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
+				e.code = status
+				e.data = data
+				throw e
+			})
 		})
-		return fetch.put(`${BUCKET_URL(bucket)}/iam`, {
+})
+
+// Doc: https://cloud.google.com/storage/docs/json_api/v1/
+const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+
+	if (filepath) {
+		const { ext } = urlHelper.getInfo(filepath)
+		if (!ext)
+			throw new Error('Bucket\'s folder cannot be made public. Only buckets or existing objects can be made public.')
+
+		return fetch.delete(`${BUCKET_FILE_URL(bucket, filepath)}/acl/allUsers`, {
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${token}`
-		}, payload).then(({ status, data }) => {
+		}).then(({ status, data }) => {
 			if (status < 400) {
 				data = data || {}
 				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 				return { status, data }
 			}
-
-			console.log(JSON.stringify(data, null, ' '))
-
 			let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
 			e.code = status
 			e.data = data
 			throw e
 		})
-	}
+	} else
+		return getBucket(bucket, token).then(({ data }) => {
+			let bindings = data && data.iam ? (data.iam.bindings || []) : []
+			const objectViewerBinding = bindings.find(b => b && b.role == 'roles/storage.objectViewer')
+			if (!objectViewerBinding || (objectViewerBinding && !(objectViewerBinding.members || []).some(m => m == 'allUsers')))
+				return { status: 200, data: { message: 'The IAM binding role \'roles/storage.objectViewer\' for member \'allUsers\' was never there to begin within.' } }
+			else 
+				bindings = bindings.map(b => {
+					if (b.role == 'roles/storage.objectViewer') {
+						const members = b.members.filter(m => m != 'allUsers')
+						if (members.some(x => x))
+							b.members = members
+						else
+							return null
+					}
+
+					return b
+				}).filter(b => b)
+
+			const payload = JSON.stringify({ bindings })
+			
+			return fetch.put(`${BUCKET_URL(bucket)}/iam`, {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`
+			}, payload).then(({ status, data }) => {
+				if (status < 400) {
+					data = data || {}
+					data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+					return { status, data }
+				}
+
+				console.log(JSON.stringify(data, null, ' '))
+
+				let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
+				e.code = status
+				e.data = data
+				throw e
+			})
+		})
 })
 
 const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(() => {
@@ -148,7 +235,8 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 module.exports = {
 	insert: putObject,
 	'get': getBucketFile,
-	makePublic,
+	addPublicAccess: makePublic,
+	removePublicAccess: makePrivate,
 	config: {
 		'get': getBucket,
 		update: updateConfig

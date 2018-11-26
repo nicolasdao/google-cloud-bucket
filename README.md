@@ -70,12 +70,12 @@ storage.insert(html, 'your-bucket/a-path/index.html', { public: true })
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
 
 // MAKING AN EXISTING OBJECT READ PUBLIC (warning: Your service account must have the 'roles/storage.objectAdmin' role)
-storage.makePublic('your-bucket/a-path/private.html')
+storage.addPublicAccess('your-bucket/a-path/private.html')
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
 
 // MAKING A BUCKET READ PUBLIC (warning: Your service account must have the 'roles/storage.admin' role)
 // Once a bucket is public, all content added to it (even when omitting the 'public' flag) is public
-storage.makePublic('your-bucket')
+storage.addPublicAccess('your-bucket')
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
 ```
 
