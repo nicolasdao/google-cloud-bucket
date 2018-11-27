@@ -35,6 +35,8 @@ Before using this package, you must first:
 
 ## Show Me The Code
 
+### Basics
+
 ```js
 const { join } = require('path')
 const { client } = require('google-cloud-bucket')
@@ -68,15 +70,49 @@ const html = `
 
 storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+```
 
-// MAKING AN EXISTING OBJECT READ PUBLIC (warning: Your service account must have the 'roles/storage.objectAdmin' role)
+> Notice the usage of the `public: true` flag in the `insert` statement above. This automatically makes this specific file publicly available at [https://storage.googleapis.com/your-bucket/a-path/index.html](https://storage.googleapis.com/your-bucket/a-path/index.html). If that file is supposed to stay private, then don't use that flag. To make the entire bucket public, refer to the next section.
+
+### Buckets & Files Configuration
+#### Publicly Readable Config
+
+This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
+
+```js
+// MAKING AN EXISTING OBJECT PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.objectAdmin' role)
 storage.addPublicAccess('your-bucket/a-path/private.html')
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
 
-// MAKING A BUCKET READ PUBLIC (warning: Your service account must have the 'roles/storage.admin' role)
+// MAKING A BUCKET PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.admin' role)
 // Once a bucket is public, all content added to it (even when omitting the 'public' flag) is public
 storage.addPublicAccess('your-bucket')
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+
+// Alternatively you can also use this API:
+storage.config('your-bucket').addPublicAccess()
+	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`))
+
+// REMOVE THE PUBLICLY READABLE ACCESS FROM A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
+storage.removePublicAccess('your-bucket')
+// or
+storage.config('your-bucket').removePublicAccess()
+```
+
+#### Configuring CORS On a Bucket
+
+If your files are publicly readable on the web, they might not be accessible when referenced from other websites. To enable other websites to access your files, you will have to configure [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your bucket:
+
+```js
+// CONFIGURE CORS ON A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
+storage.config('your-bucket').update({
+	cors:[{
+		origin: ['*'],
+		method: ['GET', 'OPTIONS', 'HEAD'],
+		responseHeader: ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept'],
+		maxAgeSeconds: 3600
+	}]
+}).then(() => `CORS successfully set up on your bucket.`)
 ```
 
 # This Is What We re Up To

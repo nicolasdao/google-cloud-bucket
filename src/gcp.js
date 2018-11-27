@@ -120,7 +120,7 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 			else if (objectViewerBinding && !(objectViewerBinding.members || []).some(m => m == 'allUsers'))
 				objectViewerBinding.members.push('allUsers')
 			else 
-				return { status: 200, data: { message: 'The IAM binding role \'roles/storage.objectViewer\' for member \'allUsers\' has already been setup.' } }
+				return { status: 200, data: { message: 'The public access was already added.' } }
 
 			const payload = JSON.stringify({ bindings })
 
@@ -172,7 +172,7 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 			let bindings = data && data.iam ? (data.iam.bindings || []) : []
 			const objectViewerBinding = bindings.find(b => b && b.role == 'roles/storage.objectViewer')
 			if (!objectViewerBinding || (objectViewerBinding && !(objectViewerBinding.members || []).some(m => m == 'allUsers')))
-				return { status: 200, data: { message: 'The IAM binding role \'roles/storage.objectViewer\' for member \'allUsers\' was never there to begin within.' } }
+				return { status: 200, data: { message: 'The public access was already removed.' } }
 			else 
 				bindings = bindings.map(b => {
 					if (b.role == 'roles/storage.objectViewer') {
