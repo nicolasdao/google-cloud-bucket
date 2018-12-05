@@ -82,6 +82,21 @@ const getBucketFile = (bucket, filepath, token) => Promise.resolve(null).then(()
 })
 
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/
+const isBucketPublic = (bucket, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+	return getBucket(bucket, token).then(({ data }) => {
+		const bindings = data && data.iam ? (data.iam.bindings || []) : []
+		const objectViewerBinding = bindings.find(b => b && b.role == 'roles/storage.objectViewer')
+		if (!objectViewerBinding)
+			bindings.push({
+				role: 'roles/storage.objectViewer',
+				members: ['allUsers']
+			})
+		return !objectViewerBinding || (objectViewerBinding.members || []).some(m => m == 'allUsers')
+	})
+})
+
+// Doc: https://cloud.google.com/storage/docs/json_api/v1/
 const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
 
@@ -239,7 +254,8 @@ module.exports = {
 	removePublicAccess: makePrivate,
 	config: {
 		'get': getBucket,
-		update: updateConfig
+		update: updateConfig,
+		isBucketPublic
 	}
 }
 

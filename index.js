@@ -7,6 +7,7 @@
 */
 
 const googleAuth = require('google-auto-auth')
+const { posix } = require('path')
 const { promise: { retry } } = require('./src/utils')
 const gcp = require('./src/gcp')
 
@@ -60,6 +61,7 @@ const createClient = ({ jsonKeyFile }) => {
 	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options))
 	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token))
 	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token))
+	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
 	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token))
 	const addPublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
@@ -98,6 +100,23 @@ const createClient = ({ jsonKeyFile }) => {
 				update: (config={}) => updateConfig(bucket, config),
 				addPublicAccess: () => addPublicAccess(bucket),
 				removePublicAccess: () => removePublicAccess(bucket)
+			}
+		},
+		bucket: (bucketName) => {
+			if (!bucketName)
+				throw new Error('Missing required \'bucketName\' argument')
+			return {
+				'get': () => getBucket(bucketName),
+				update: (config={}) => updateConfig(bucketName, config),
+				addPublicAccess: () => addPublicAccess(bucketName),
+				removePublicAccess: () => removePublicAccess(bucketName),
+				isPublic: () => isBucketPublic(bucketName),
+				object: {
+					'get': (filePath, options={}) => retryGetObject(posix.join(bucketName, filePath), options),
+					insert: (object, filePath, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
+					addPublicAccess: (filePath) => addPublicAccess(posix.join(bucketName, filePath)),
+					removePublicAccess: (filePath) => removePublicAccess(posix.join(bucketName, filePath))
+				}
 			}
 		}
 	}
