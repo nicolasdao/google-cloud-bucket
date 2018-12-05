@@ -28,15 +28,6 @@ const _retryFn = (fn, options={}) => retry(
 		else
 			throw e
 	})
-	.then(({ status, data }) => {
-		if (status > 299) {
-			const message = ((data || {}).error || {}).message || JSON.stringify(data || {})
-			let e = new Error(message)
-			e.code = status
-			throw e 
-		}
-		return { status, data }
-	})
 
 const _getBucketAndPathname = (filePath, options={}) => {
 	if (!filePath)
@@ -58,30 +49,31 @@ const createClient = ({ jsonKeyFile }) => {
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
 
-	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options))
-	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token))
-	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token))
-	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
-	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token))
+	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options)).then(({ data }) => data)
+	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token)).then(({ data }) => data)
+	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token)).then(({ data }) => data)
+	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token)).then(({ data }) => data)
+	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
 	const addPublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.addPublicAccess(bucket, file, token)
-	})
+	}).then(({ data }) => data)
 	const removePublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.removePublicAccess(bucket, file, token)
-	})
+	}).then(({ data }) => data)
 
 	const retryPutObject = (object, filePath, options={}) => _retryFn(() => putObject(object, filePath, options), options)
-		.then(res => {
+		.then(data => {
 			if (options.public)
-				return addPublicAccess(filePath).then(({ data:{ uri } }) => {
-					if (res && res.data)
-						res.data.uri = uri
-					return res
+				return addPublicAccess(filePath).then(({ uri }) => {
+					if (data)
+						data.uri = uri
+					return data
 				})
-			return res
+			return data
 		})
+
 	const retryGetObject = (filePath, options={}) => Promise.resolve(null).then(() => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
 		return _retryFn(() => getObject(bucket, file), options) 
