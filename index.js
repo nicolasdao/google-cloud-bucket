@@ -106,16 +106,23 @@ const createClient = ({ jsonKeyFile }) => {
 			if (!bucketName)
 				throw new Error('Missing required \'bucketName\' argument')
 			return {
+				name: bucketName,
 				'get': () => getBucket(bucketName),
 				update: (config={}) => updateConfig(bucketName, config),
 				addPublicAccess: () => addPublicAccess(bucketName),
 				removePublicAccess: () => removePublicAccess(bucketName),
 				isPublic: () => isBucketPublic(bucketName),
-				object: {
-					'get': (filePath, options={}) => retryGetObject(posix.join(bucketName, filePath), options),
-					insert: (object, filePath, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
-					addPublicAccess: (filePath) => addPublicAccess(posix.join(bucketName, filePath)),
-					removePublicAccess: (filePath) => removePublicAccess(posix.join(bucketName, filePath))
+				object: (filePath) => {
+					if (!filePath)
+						throw new Error('Missing required \'filePath\' argument')
+
+					return {
+						file: filePath,
+						'get': (options={}) => retryGetObject(posix.join(bucketName, filePath), options),
+						insert: (object, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
+						addPublicAccess: () => addPublicAccess(posix.join(bucketName, filePath)),
+						removePublicAccess: () => removePublicAccess(posix.join(bucketName, filePath))
+					}
 				}
 			}
 		}
