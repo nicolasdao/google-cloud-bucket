@@ -87,7 +87,7 @@ const isBucketPublic = (bucket, token) => Promise.resolve(null).then(() => {
 	return getBucket(bucket, token).then(({ data }) => {
 		const bindings = data && data.iam ? (data.iam.bindings || []) : []
 		const objectViewerBinding = bindings.find(b => b && b.role == 'roles/storage.objectViewer')
-		return objectViewerBinding && (objectViewerBinding.members || []).some(m => m == 'allUsers')
+		return objectViewerBinding && (objectViewerBinding.members || []).some(m => m == 'allUsers') ? true : false
 	})
 })
 

@@ -52,7 +52,7 @@ const createClient = ({ jsonKeyFile }) => {
 	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options)).then(({ data }) => data)
 	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token)).then(({ data }) => data)
 	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token)).then(({ data }) => data)
-	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token)).then(({ data }) => data)
+	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
 	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
 	const addPublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
