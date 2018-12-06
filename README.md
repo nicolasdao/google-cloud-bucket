@@ -124,6 +124,7 @@ bucket.cors.exists().then(yes => yes
 ```
 
 You can also check if a specific CORS config exists:
+
 ```js
 bucket.cors.exists({
 	origin: ['*'],
@@ -133,6 +134,12 @@ bucket.cors.exists({
 }).then(yes => yes 
 	? console.log(`CORS already set up on bucket '${bucket.name}'.`)
 	: console.log(`CORS not set up yet on bucket '${bucket.name}'.`))
+```
+
+To remove CORS from a bucket:
+
+```js
+bucket.cors.disable().then(() => console.log(`CORS successfully disabled on bucket '${bucket.name}'.`))
 ```
 
 # This Is What We re Up To

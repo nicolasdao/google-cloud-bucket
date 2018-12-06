@@ -55,6 +55,7 @@ const createClient = ({ jsonKeyFile }) => {
 	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
 	const isCorsSetUp = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
 	const setupCors = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.setup(bucket, corsConfig, token))
+	const disableCors = (bucket) => getToken(auth).then(token => gcp.config.cors.disable(bucket, token))
 	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
 	const addPublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
@@ -108,7 +109,8 @@ const createClient = ({ jsonKeyFile }) => {
 				isPublic: () => isBucketPublic(bucketName),
 				cors: {
 					exists: (corsConfig) => isCorsSetUp(bucketName, corsConfig),
-					setup: (corsConfig) => setupCors(bucketName, corsConfig)
+					setup: (corsConfig) => setupCors(bucketName, corsConfig),
+					disable: () => disableCors(bucketName)
 				},
 				object: (filePath) => {
 					if (!filePath)

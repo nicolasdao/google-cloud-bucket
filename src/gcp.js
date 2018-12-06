@@ -284,13 +284,13 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 	})
 })
 
-const setupCors = (bucket, corsConfig={}, token) => Promise.resolve(null).then(() => {
+const setupCors = (bucket, corsConfig={}, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
-	_validateCorsConfig(corsConfig)
+	if (options.mode != 'delete')
+		_validateCorsConfig(corsConfig)
 
-	const payload = JSON.stringify({
-		cors: [corsConfig]
-	})
+	const cors = options.mode != 'delete' ? [corsConfig] : []
+	const payload = JSON.stringify({cors})
 
 	return fetch.patch(`${BUCKET_URL(bucket)}`, {
 		'Content-Type': 'application/json',
@@ -320,7 +320,8 @@ module.exports = {
 		isBucketPublic,
 		cors: {
 			isCorsSetup,
-			setup: setupCors
+			setup: setupCors,
+			disable: (bucket, token) => setupCors(bucket, {}, token, { mode: 'delete' })
 		}
 	}
 }
