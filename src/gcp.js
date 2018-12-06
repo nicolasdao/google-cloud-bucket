@@ -91,6 +91,48 @@ const isBucketPublic = (bucket, token) => Promise.resolve(null).then(() => {
 	})
 })
 
+const _validateCorsConfig = cors => {
+	cors = cors || {}
+	if (!cors.origin)
+		throw new Error('Missing required \'origin\' argument.')
+
+	if (!cors.method)
+		throw new Error('Missing required \'method\' argument.')
+
+	if (!Array.isArray(cors.origin))
+		throw new Error('Wrong argument exception. \'origin\' must be an array of strings.')
+
+	if (!Array.isArray(cors.method))
+		throw new Error('Wrong argument exception. \'method\' must be an array of strings.')
+
+	if (cors.responseHeader && !Array.isArray(cors.responseHeader))
+		throw new Error('Wrong argument exception. \'responseHeader\' must be an array of strings.')
+
+	const t = typeof(cors.maxAgeSeconds)
+	if (cors.maxAgeSeconds && t != 'number' && t != 'string')
+		throw new Error('Wrong argument exception. \'maxAgeSeconds\' must be a number or a string representing a number.')
+}
+
+const isCorsSetup = (bucket, corsConfig, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+	if (corsConfig)
+		_validateCorsConfig(corsConfig)
+	return getBucket(bucket, token).then(({ data }) => {
+		const cors = (data.cors || []).filter(x => x)
+		if (!cors.some(x => x))
+			return false
+
+		return !corsConfig || cors.some(({ origin=[], method=[], responseHeader=[], maxAgeSeconds }) => {
+			const originMatch = origin.every(o => corsConfig.origin.some(x => x == o))
+			const methodMatch = method.every(o => corsConfig.method.some(x => x == o))
+			const responseHeaderMatch = responseHeader.every(o => corsConfig.responseHeader.some(x => x == o))
+			const maxAgeSecondsMatches = maxAgeSeconds == corsConfig.maxAgeSeconds
+
+			return originMatch && methodMatch && responseHeaderMatch && maxAgeSecondsMatches
+		})
+	})
+})
+
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/
 const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
@@ -242,6 +284,31 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 	})
 })
 
+const setupCors = (bucket, corsConfig={}, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+	_validateCorsConfig(corsConfig)
+
+	const payload = JSON.stringify({
+		cors: [corsConfig]
+	})
+
+	return fetch.patch(`${BUCKET_URL(bucket)}`, {
+		'Content-Type': 'application/json',
+		Authorization: `Bearer ${token}`
+	}, payload).then(({ status, data }) => {
+		if (status < 400) {
+			data = data || {}
+			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
+			return { status, data }
+		}
+
+		let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
+		e.code = status
+		e.data = data
+		throw e
+	})
+})
+
 module.exports = {
 	insert: putObject,
 	'get': getBucketFile,
@@ -250,7 +317,11 @@ module.exports = {
 	config: {
 		'get': getBucket,
 		update: updateConfig,
-		isBucketPublic
+		isBucketPublic,
+		cors: {
+			isCorsSetup,
+			setup: setupCors
+		}
 	}
 }
 

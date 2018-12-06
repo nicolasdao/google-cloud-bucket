@@ -57,6 +57,8 @@ const someObject = {
 storage.insert(someObject, 'your-bucket/a-path/filename.json') // insert an object into a bucket 'a-path/filename.json' does not need to exist
 	.then(() => storage.get('your-bucket/a-path/filename.json')) // retrieve that new object
 	.then(res => console.log(JSON.stringify(res, null, ' ')))
+// OR YOu CAN ALSO USE THIS API STYLE
+storage.bucket('your-bucket').object('a-path/filename.json').insert(someObject)
 
 
 // ADDING A HTML PAGE WITH PUBLIC ACCESS (warning: Your service account must have the 'roles/storage.objectAdmin' role)
@@ -80,23 +82,22 @@ storage.insert(html, 'your-bucket/a-path/index.html', { public: true })
 This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
 
 ```js
-// MAKING AN EXISTING OBJECT PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.objectAdmin' role)
-storage.addPublicAccess('your-bucket/a-path/private.html')
-	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+const bucket = storage.bucket('your-bucket')
 
 // MAKING A BUCKET PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.admin' role)
 // Once a bucket is public, all content added to it (even when omitting the 'public' flag) is public
-storage.addPublicAccess('your-bucket')
+bucket.addPublicAccess()
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
 
-// Alternatively you can also use this API:
-storage.config('your-bucket').addPublicAccess()
-	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`))
+// REMOVING THE PUBLICLY READABLE ACCESS FROM A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
+bucket.removePublicAccess()
 
-// REMOVE THE PUBLICLY READABLE ACCESS FROM A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
-storage.removePublicAccess('your-bucket')
-// or
-storage.config('your-bucket').removePublicAccess()
+// MAKING AN EXISTING OBJECT PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.objectAdmin' role)
+bucket.object('a-path/private.html').addPublicAccess()
+	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+
+// REMOVING THE PUBLICLY READABLE ACCESS FROM A FILE  (warning: Your service account must have the 'roles/storage.objectAdmin' role)
+bucket.object('a-path/private.html').removePublicAccess()
 ```
 
 #### Configuring CORS On a Bucket
@@ -105,14 +106,33 @@ If your files are publicly readable on the web, they might not be accessible whe
 
 ```js
 // CONFIGURE CORS ON A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
-storage.config('your-bucket').update({
-	cors:[{
-		origin: ['*'],
-		method: ['GET', 'OPTIONS', 'HEAD'],
-		responseHeader: ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept'],
-		maxAgeSeconds: 3600
-	}]
-}).then(() => `CORS successfully set up on your bucket.`)
+bucket.cors.setup({
+	origin: ['*'],
+	method: ['GET', 'OPTIONS', 'HEAD'],
+	responseHeader: ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept'],
+	maxAgeSeconds: 3600
+})
+.then(() => console.log(`CORS successfully set up on your bucket.`))
+```
+
+If you want to check if CORS has already been set up on a bucket:
+
+```js
+bucket.cors.exists().then(yes => yes 
+	? console.log(`CORS already set up on bucket '${bucket.name}'.`)
+	: console.log(`CORS not set up yet on bucket '${bucket.name}'.`))
+```
+
+You can also check if a specific CORS config exists:
+```js
+bucket.cors.exists({
+	origin: ['*'],
+	method: ['GET', 'OPTIONS', 'HEAD'],
+	responseHeader: ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept'],
+	maxAgeSeconds: 3600
+}).then(yes => yes 
+	? console.log(`CORS already set up on bucket '${bucket.name}'.`)
+	: console.log(`CORS not set up yet on bucket '${bucket.name}'.`))
 ```
 
 # This Is What We re Up To
