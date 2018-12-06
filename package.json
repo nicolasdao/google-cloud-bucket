@@ -1,6 +1,6 @@
 {
   "name": "google-cloud-bucket",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Nodejs package to add objects to a Google Cloud Bucket.",
   "main": "index.js",
   "repository": {
