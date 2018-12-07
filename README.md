@@ -72,6 +72,9 @@ const html = `
 
 storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
 	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+
+// UPLOADING AN IMAGE
+storage.insert(buffer, 'your-bucket/a-path/image.jpg') 
 ```
 
 > Notice the usage of the `public: true` flag in the `insert` statement above. This automatically makes this specific file publicly available at [https://storage.googleapis.com/your-bucket/a-path/index.html](https://storage.googleapis.com/your-bucket/a-path/index.html). If that file is supposed to stay private, then don't use that flag. To make the entire bucket public, refer to the next section.
@@ -83,6 +86,9 @@ This allows to make any files publicly readable by anybody on the web. That's us
 
 ```js
 const bucket = storage.bucket('your-bucket')
+
+// TEST WHETHER A BUCKET IS PUBLIC OR NOT
+bucket.isPublic().then(isPublic => isPublic ? console.log(`Bucket '${bucket.name}' is public`) : console.log(`Bucket '${bucket.name}' is not public`))
 
 // MAKING A BUCKET PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.admin' role)
 // Once a bucket is public, all content added to it (even when omitting the 'public' flag) is public
@@ -108,7 +114,7 @@ If your files are publicly readable on the web, they might not be accessible whe
 // CONFIGURE CORS ON A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
 bucket.cors.setup({
 	origin: ['*'],
-	method: ['GET', 'OPTIONS', 'HEAD'],
+	method: ['GET', 'OPTIONS', 'HEAD', 'POST'],
 	responseHeader: ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept'],
 	maxAgeSeconds: 3600
 })
@@ -128,7 +134,7 @@ You can also check if a specific CORS config exists:
 ```js
 bucket.cors.exists({
 	origin: ['*'],
-	method: ['GET', 'OPTIONS', 'HEAD'],
+	method: ['GET', 'OPTIONS', 'HEAD', 'POST'],
 	responseHeader: ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept'],
 	maxAgeSeconds: 3600
 }).then(yes => yes 

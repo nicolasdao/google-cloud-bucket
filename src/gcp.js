@@ -10,10 +10,11 @@
 // Uploading data: https://cloud.google.com/storage/docs/json_api/v1/how-tos/upload
 // Best practices: https://cloud.google.com/storage/docs/json_api/v1/how-tos/performance
 // Object versioning: https://cloud.google.com/storage/docs/object-versioning
+// Resumable upload: https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload
 
 const { fetch, urlHelper, obj: { merge } } = require('./utils')
 
-const BUCKET_UPLOAD_URL = (bucket, fileName) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=media&name=${encodeURIComponent(fileName)}`
+const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}`
 const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
 const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
 
@@ -24,10 +25,10 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 
 const putObject = (object, filePath, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ object, filePath, token })
-	const payload = typeof(object) == 'string' ? object : JSON.stringify(object || {})
+	const payload = typeof(object) == 'string' || (object instanceof Buffer) ? object : JSON.stringify(object || {})
 	const [ bucket, ...names ] = filePath.split('/')
 
-	const { contentType } = urlHelper.getInfo(filePath)
+	const { contentType='application/json' } = urlHelper.getInfo(filePath)
 
 	let headers = merge(options.headers || {}, { 
 		'Content-Length': payload.length,
@@ -35,7 +36,7 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 	})
 
 	if (!headers['Content-Type'])
-		headers['Content-Type'] = contentType || 'application/json'
+		headers['Content-Type'] = contentType
 
 	return fetch.post(BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, payload)
 })

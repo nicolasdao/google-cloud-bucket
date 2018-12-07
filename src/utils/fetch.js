@@ -12,8 +12,8 @@ const _processResponse = (res, uri) => {
 	const { ext, contentType } = getInfo(uri || '')
 	const action = !ext || !contentType || !contentType.match(/(html|css|xml|javascript|rss|csv)/) ? (() => res.json()) : (() => res.text())
 	return action()
-		.then(data => ({ status: res.status, data }))
-		.catch(() => ({ status: 200, data: res }))
+		.then(data => ({ status: res.status, data, headers: res.headers }))
+		.catch(() => ({ status: 200, data: res, headers: res.headers }))
 }
 
 const postData = (url, headers={}, body) => 
