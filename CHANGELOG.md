@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.3.6"></a>
+## [0.3.6](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.3.5...v0.3.6) (2018-12-08)
+
+
+### Features
+
+* Add new field 'publicUri' on the response of a file insert ([22124c5](https://github.com/nicolasdao/google-cloud-bucket/commit/22124c5))
+
+
+
 <a name="0.3.5"></a>
 ## [0.3.5](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.3.4...v0.3.5) (2018-12-07)
 
