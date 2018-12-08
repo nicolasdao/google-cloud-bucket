@@ -71,7 +71,7 @@ const html = `
 </html>`
 
 storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
-	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
 
 // UPLOADING AN IMAGE
 storage.insert(buffer, 'your-bucket/a-path/image.jpg') 
@@ -93,14 +93,14 @@ bucket.isPublic().then(isPublic => isPublic ? console.log(`Bucket '${bucket.name
 // MAKING A BUCKET PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.admin' role)
 // Once a bucket is public, all content added to it (even when omitting the 'public' flag) is public
 bucket.addPublicAccess()
-	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
 
 // REMOVING THE PUBLICLY READABLE ACCESS FROM A BUCKET (warning: Your service account must have the 'roles/storage.admin' role)
 bucket.removePublicAccess()
 
 // MAKING AN EXISTING OBJECT PUBLICLY READABLE (warning: Your service account must have the 'roles/storage.objectAdmin' role)
 bucket.object('a-path/private.html').addPublicAccess()
-	.then(({ data:{ uri } }) => console.log(`Your web page is publicly available at: ${uri}`)) 
+	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
 
 // REMOVING THE PUBLICLY READABLE ACCESS FROM A FILE  (warning: Your service account must have the 'roles/storage.objectAdmin' role)
 bucket.object('a-path/private.html').removePublicAccess()

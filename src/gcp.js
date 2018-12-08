@@ -153,6 +153,7 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 		}, payload).then(({ status, data }) => {
 			if (status < 400) {
 				data = data || {}
+				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 				return { status, data }
 			}
@@ -183,6 +184,7 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 			}, payload).then(({ status, data }) => {
 				if (status < 400) {
 					data = data || {}
+					data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 					data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 					return { status, data }
 				}
@@ -212,6 +214,7 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 		}).then(({ status, data }) => {
 			if (status < 400) {
 				data = data || {}
+				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 				return { status, data }
 			}
@@ -247,6 +250,7 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 			}, payload).then(({ status, data }) => {
 				if (status < 400) {
 					data = data || {}
+					data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 					data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
 					return { status, data }
 				}
