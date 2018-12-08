@@ -69,7 +69,7 @@ const createClient = ({ jsonKeyFile }) => {
 	const retryPutObject = (object, filePath, options={}) => _retryFn(() => putObject(object, filePath, options), options)
 		.then(data => {
 			if (data)
-				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent((filePath || '').replace(/^\/*/, ''))}`
+				data.publicUri = `https://storage.googleapis.com/${(filePath || '').replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`
 			if (options.public)
 				return addPublicAccess(filePath).then(({ uri }) => {
 					if (data)
