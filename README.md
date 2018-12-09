@@ -141,7 +141,11 @@ storage.bucket('your-bucket').object('a-path/image.jpg').exists()
 ### Buckets & Files Configuration
 #### Publicly Readable Config
 
-This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed). If you intend to set this up to host a website, don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
+This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
+
+Once your bucket is publicly readable, everyone can access it at this url: [https://storage.googleapis.com/your-bucket/some-path/index.html](https://storage.googleapis.com/your-bucket/some-path/index.html)
+
+> WARNING: If that bucket hosts files that hsould be accessible cross domain (e.g., an RSS feed), don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
 
 ```js
 const bucket = storage.bucket('your-bucket')
@@ -173,6 +177,10 @@ It is also possible to make a single file publicly readable in a single command 
 storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
 	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
 ```
+
+Once your file is publicly readable, everyone can access it at this url: [https://storage.googleapis.com/your-bucket/a-path/index.html](https://storage.googleapis.com/your-bucket/a-path/index.html)
+
+> WARNING: If that bucket hosts files that hsould be accessible cross domain (e.g., an RSS feed), don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
 
 #### Configuring CORS On a Bucket
 
