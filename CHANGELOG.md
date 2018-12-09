@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.4.1"></a>
+## [0.4.1](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.4.0...v0.4.1) (2018-12-09)
+
+
+### Features
+
+* Add support for downloading files ([b1a522f](https://github.com/nicolasdao/google-cloud-bucket/commit/b1a522f))
+
+
+
 <a name="0.4.0"></a>
 # [0.4.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.3.8...v0.4.0) (2018-12-09)
 
