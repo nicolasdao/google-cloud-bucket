@@ -5,6 +5,8 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
+> * [Annex](#annex) 
+>    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
 > * [About Neap](#this-is-what-we-re-up-to)
 > * [License](#license)
 
@@ -26,7 +28,7 @@ Before using this package, you must first:
 
 3. Have a Service Account set up with the following 2 roles:
 	- `roles/storage.objectCreator`
-	- `roles/storage.objectAdmin` (only if you want to update access to object)
+	- `roles/storage.objectAdmin` (only if you want to update access to object or create/delete buckets)
 	- `roles/storage.admin` (only if you want to update access to an entire bucket)
 
 4. Get the JSON keys file for that Service Account above
@@ -52,8 +54,19 @@ const someObject = {
 	city: 'Sydney'
 }
 
+// CREATING A BUCKET (This method will fail if your bucket name is not globally unique. You also need to the role 'roles/storage.objectAdmin')
+storate.bucket('your-globally-unique-bucket-name').create()
+	.then(data => console.log(data))
 
-// ADDING AN OBJECT WITH PRIVATE ACCESS
+// CREATING A BUCKET IN SPECIFIC LOCATION (default is US. A detailed list of all the locations can be found in the Annexes of this document)
+storate.bucket('your-globally-unique-bucket-name').create({ location: 'australia-southeast1' })
+	.then(data => console.log(data))
+
+// DELETING A BUCKET
+storate.bucket('your-globally-unique-bucket-name').delete()
+	.then(data => console.log(data))
+
+// ADDING AN OBJECT
 storage.insert(someObject, 'your-bucket/a-path/filename.json') // insert an object into a bucket 'a-path/filename.json' does not need to exist
 	.then(() => storage.get('your-bucket/a-path/filename.json')) // retrieve that new object
 	.then(res => console.log(JSON.stringify(res, null, ' ')))
@@ -104,7 +117,7 @@ storage.exists('your-bucket/a-path/image.jpg')
 
 ### Bucket API
 
-The examples above demonstrate how to insert and query any storage. We've also included a variant of those APIs that are more focused on a the bucket:
+The examples above demonstrate how to insert and query any storage. We've also included a variant of those APIs that are more focused on the bucket:
 
 ```js
 // THIS API:
@@ -202,6 +215,58 @@ To remove CORS from a bucket:
 ```js
 bucket.cors.disable().then(() => console.log(`CORS successfully disabled on bucket '${bucket.name}'.`))
 ```
+
+# Annex
+## List Of All Google Cloud Platform Locations
+### Single Regions
+
+Single reagions are bucket locations that indicate that your data are replicated in multiple servers in that single region. Though it is unlikely that you would loose your data because all servers fail, it is however possible that a network failure brings that region inaccessbile. At this stage, your data would not be lost, but they would be unavailable for the period of that network outage. This type of storage is the cheapest.
+
+Use this type of location if your data:
+- Are not highly critical.
+- Do not have to be quickly delivered wherever your clients are located (choosing us-west2 means that the data access will be fast for clients in Los Angeles, but slower for clients in Belgium). 
+- Are so big (multiple terabytes) that the storage cost is a primary concern.
+
+If the above limits are too strict for your use case, then you should probably use a [Multi Regions](#multi-regions).
+
+| Location 					| Description 				|
+|---------------------------|---------------------------|
+| northamerica-northeast1 	| Canada - Montréal 		|
+| us-central1 				| US - Iowa 				|
+| us-east1 					| US - South Carolina 		|
+| us-east4 					| US - Northern Virginia 	|
+| us-west1 					| US - Oregon 				|
+| us-west2 					| US - Los Angeles 			|
+| southamerica-east1 		| South America - Brazil 	|
+| europe-north1 			| Europe - Finland 			|
+| europe-west1 				| Europe - Belgium 			|
+| europe-west2 				| Europe - England 			|
+| europe-west3 				| Europe - Germany 			|
+| europe-west4 				| Europe - Netherlands 		|
+| asia-east1 				| Asia - Taiwan 			|
+| asia-east2 				| Asia - Hong Kong 			|
+| asia-northeast1 			| Asia - Japan 				|
+| asia-south1 				| Asia - Mumbai 			|
+| asia-southeast1 			| Asia - Singapore 			|
+| australia-southeast1 		| Asia - Australia 			|
+| asia 						| Asia 						|
+| us 						| US 						|
+| eu 						| Europe 					|
+
+### Multi Regions
+
+Multi regions are bucket locations where your data are not only replicated in multiple servers in the same regions, but also replicated across multiple locations (e.g., `asia` will replicate your data across _Taiwan_, _Hong Kong_, _Japan_, _Mumbai_, _Singapore_, _Australia_). That means that your data are:
+
+- Quickly accessible wherever your clients are in that continent.
+- Highly available. Even if a region goes down, the others will carry on serving your data.
+- A bit more expensive. 
+
+| Location 					| Description 				|
+|---------------------------|---------------------------|
+| asia 						| Asia 						|
+| us 						| US 						|
+| eu 						| Europe 					|
+
 
 # This Is What We re Up To
 We are Neap, an Australian Technology consultancy powering the startup ecosystem in Sydney. We simply love building Tech and also meeting new people, so don't hesitate to connect with us at [https://neap.co](https://neap.co).

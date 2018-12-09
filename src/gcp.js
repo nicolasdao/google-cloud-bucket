@@ -14,6 +14,7 @@
 
 const { fetch, urlHelper, obj: { merge } } = require('./utils')
 
+const BUCKET_LIST_URL = projectId => `https://www.googleapis.com/storage/v1/b?project=${projectId}`
 const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}`
 const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
 const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
@@ -39,6 +40,45 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 		headers['Content-Type'] = contentType
 
 	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, body: payload })
+})
+
+/**
+ * [description]
+ * @param  {String} name      			[description]
+ * @param  {String} projectId 			[description]
+ * @param  {String} token     			[description]
+ * @param  {Object} options.location   	[description]
+ * @return {[type]}           			[description]
+ */
+const createBucket = (name, projectId, token, options={}) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ projectId, name, token })
+
+	const payload = { name, location: options.location }
+
+	return fetch.post({ 
+		uri: BUCKET_LIST_URL(projectId), 
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}, 
+		body: JSON.stringify(payload)
+	}).then(({ status, data }) => {
+		if (status > 399)
+			throw new Error(JSON.stringify(data, null, ' '))
+
+		return { status, data }
+	})
+})
+
+const deleteBucket = (bucketName, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucketName, token })
+	return fetch.delete({
+		uri: BUCKET_URL(bucketName), 
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
 })
 
 const getBucket = (bucket, token) => Promise.resolve(null).then(() => {
@@ -96,13 +136,8 @@ const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(()
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
 		}
-	}).then(({ status, data }) => {
-		if (status < 400){
-			const answer = data && data.items ? true : false
-			return { status, data: answer }
-		}
-
-		return { status, data: false }
+	}).then(({ status }) => {
+		return { status, data: status < 400 }
 	})
 })
 
@@ -344,6 +379,10 @@ module.exports = {
 	addPublicAccess: makePublic,
 	removePublicAccess: makePrivate,
 	doesFileExist,
+	bucket: {
+		create: createBucket,
+		delete: deleteBucket
+	},
 	config: {
 		'get': getBucket,
 		update: updateConfig,

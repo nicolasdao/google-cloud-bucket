@@ -44,6 +44,10 @@ const _getBucketAndPathname = (filePath, options={}) => {
 const createClient = ({ jsonKeyFile }) => {
 	_validateRequiredParams({ jsonKeyFile })
 
+	const { project_id:projectId } = require(jsonKeyFile)
+	if (!projectId)
+		throw new Error(`The service account JSON key file ${jsonKeyFile} does not contain a 'project_id' field.`)
+
 	const auth = googleAuth({ 
 		keyFilename: jsonKeyFile,
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -53,6 +57,8 @@ const createClient = ({ jsonKeyFile }) => {
 	const getObject = (bucket, filePath, options) => getToken(auth).then(token => gcp.get(bucket, filePath, token, options)).then(({ data }) => data)
 	const objectExists = (bucket, filePath) => getToken(auth).then(token => gcp.doesFileExist(bucket, filePath, token)).then(({ data }) => data)
 	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token)).then(({ data }) => data)
+	const createBucket = (bucket, options={}) => getToken(auth).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ data }) => data)
+	const deleteBucket = (bucket) => getToken(auth).then(token => gcp.bucket.delete(bucket, token)).then(({ data }) => data)
 	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
 	const isCorsSetUp = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
 	const setupCors = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.setup(bucket, corsConfig, token)).then(({ data }) => data)
@@ -113,6 +119,9 @@ const createClient = ({ jsonKeyFile }) => {
 			return {
 				name: bucketName,
 				'get': () => getBucket(bucketName),
+				exists: () => objectExists(bucketName),
+				create: (options={}) => createBucket(bucketName, options),
+				delete: () => deleteBucket(bucketName),
 				update: (config={}) => updateConfig(bucketName, config),
 				addPublicAccess: () => addPublicAccess(bucketName),
 				removePublicAccess: () => removePublicAccess(bucketName),
