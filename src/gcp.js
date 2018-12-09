@@ -136,8 +136,11 @@ const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(()
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
 		}
-	}).then(({ status }) => {
-		return { status, data: status < 400 }
+	}).then(({ status, data }) => {
+		const answer = filepath 
+			? (data && (data.items || []).some(x => x) ? true : false)
+			: status < 400
+		return { status, data: answer }
 	})
 })
 
