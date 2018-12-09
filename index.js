@@ -48,9 +48,10 @@ const createClient = ({ jsonKeyFile }) => {
 		keyFilename: jsonKeyFile,
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
-
+	//doesFileExist
 	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options)).then(({ data }) => data)
 	const getObject = (bucket, filePath, options) => getToken(auth).then(token => gcp.get(bucket, filePath, token, options)).then(({ data }) => data)
+	const objectExists = (bucket, filePath) => getToken(auth).then(token => gcp.doesFileExist(bucket, filePath, token)).then(({ data }) => data)
 	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token)).then(({ data }) => data)
 	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
 	const isCorsSetUp = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
@@ -89,6 +90,13 @@ const createClient = ({ jsonKeyFile }) => {
 		'get': retryGetObject,
 		addPublicAccess,
 		removePublicAccess,
+		exists: (filepath) => Promise.resolve(null).then(() => {
+			if(!filepath)
+				throw new Error('Missing required \'filepath\' argument')
+
+			const { bucket, file } = _getBucketAndPathname(filepath, { ignoreMissingFile: true })
+			return objectExists(bucket, file)
+		}),
 		config: (bucket) => {
 			if(!bucket)
 				throw new Error('Missing required \'bucket\' argument')
@@ -120,6 +128,7 @@ const createClient = ({ jsonKeyFile }) => {
 
 					return {
 						file: filePath,
+						exists: () => objectExists(bucketName, filePath),
 						'get': (options={}) => retryGetObject(posix.join(bucketName, filePath), options),
 						insert: (object, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
 						addPublicAccess: () => addPublicAccess(posix.join(bucketName, filePath)),

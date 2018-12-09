@@ -87,6 +87,25 @@ const getBucketFile = (bucket, filepath, token, options={}) => Promise.resolve(n
 	})
 })
 
+const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+
+	return fetch.get({ 
+		uri: `${BUCKET_FILE_URL(bucket)}${filepath ? `?prefix=${filepath.replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}` : ''}`, 
+		headers: {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	}).then(({ status, data }) => {
+		if (status < 400){
+			const answer = data && data.items ? true : false
+			return { status, data: answer }
+		}
+
+		return { status, data: false }
+	})
+})
+
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/
 const isBucketPublic = (bucket, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
@@ -324,6 +343,7 @@ module.exports = {
 	'get': getBucketFile,
 	addPublicAccess: makePublic,
 	removePublicAccess: makePrivate,
+	doesFileExist,
 	config: {
 		'get': getBucket,
 		update: updateConfig,
