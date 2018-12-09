@@ -21,7 +21,7 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 const _retryFn = (fn, options={}) => retry(
 	fn, 
 	() => true, 
-	{ ignoreFailure: true, retryInterval: 800 })
+	{ ignoreFailure: true, retryInterval: [500, 2000], retryAttempts: 10 })
 	.catch(e => {
 		if (options.retryCatch)
 			return options.retryCatch(e)
