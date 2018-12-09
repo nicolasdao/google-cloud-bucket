@@ -67,8 +67,7 @@ const html = `
 	</body>
 </html>`
 
-storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
-	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
+storage.insert(html, 'your-bucket/a-path/index.html') 
 
 // UPLOADING AN IMAGE (we assume we have access to an image as a buffer variable called 'imgBuffer')
 storage.insert(imgBuffer, 'your-bucket/a-path/image.jpg') 
@@ -84,7 +83,8 @@ storage.get('your-bucket/a-path/index.html').then(htmlString => console.log(html
 storage.get('your-bucket/a-path/image.jpg').then(imgBuffer => console.log(imgBuffer))
 
 // USE CASE 2 - Loading the image on your filesystem
-storage.get('your-bucket/a-path/image.jpg', { dst: 'some-path/image.jpg' }).then(() => console.log(`Image successfully downloaded.`))
+storage.get('your-bucket/a-path/image.jpg', { dst: 'some-path/image.jpg' })
+	.then(() => console.log(`Image successfully downloaded.`))
 
 // USE CASE 3 - Piping the image buffer into a custom stream reader
 const { Writable } = require('stream')
@@ -94,31 +94,41 @@ const customReader = new Writable({
 		callback()
 	}
 })
-storage.get('your-bucket/a-path/image.jpg', { streamReader: customReader }).then(() => console.log(`Image successfully downloaded.`))
-```
+storage.get('your-bucket/a-path/image.jpg', { streamReader: customReader })
+	.then(() => console.log(`Image successfully downloaded.`))
 
-> Notice the usage of the `public: true` flag in the `insert` statement above. This automatically makes this specific file publicly available at [https://storage.googleapis.com/your-bucket/a-path/index.html](https://storage.googleapis.com/your-bucket/a-path/index.html). If that file is supposed to stay private, then don't use that flag. To make the entire bucket public, refer to the next section [Publicly Readable Config](#publicly-readable-config).
+// TESTING IF A FILE OR A BUCKET EXISTS
+storage.exists('your-bucket/a-path/image.jpg')
+	.then(fileExists => fileExists ? console.log('File exists.') : console.log('File does not exist.'))
+```
 
 ### Bucket API
 
-The examples above show how to insert and query any storage. We've also included a variant of those APIs that are more focused on a specific bucket:
+The examples above demonstrate how to insert and query any storage. We've also included a variant of those APIs that are more focused on a the bucket:
 
 ```js
-// THIS API
+// THIS API:
 storage.insert(someObject, 'your-bucket/a-path/filename.json')
-// CAN BE REWRITTEN
+// CAN BE REWRITTEN AS FOLLOW:
 storage.bucket('your-bucket').object('a-path/filename.json').insert(someObject)
 
-// THIS API
+// THIS API:
 storage.get('your-bucket/a-path/filename.json').then(obj => console.log(obj))
-// CAN BE REWRITTEN
+// CAN BE REWRITTEN AS FOLLOW:
 storage.bucket('your-bucket').object('a-path/filename.json').get().then(obj => console.log(obj))
+
+// THIS API:
+storage.exists('your-bucket/a-path/image.jpg')
+	.then(fileExists => fileExists ? console.log('File exists.') : console.log('File does not exist.'))
+// CAN BE REWRITTEN AS FOLLOW:
+storage.bucket('your-bucket').object('a-path/image.jpg').exists()
+	.then(fileExists => fileExists ? console.log('File exists.') : console.log('File does not exist.'))
 ```
 
 ### Buckets & Files Configuration
 #### Publicly Readable Config
 
-This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
+This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed). If you intend to set this up to host a website, don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
 
 ```js
 const bucket = storage.bucket('your-bucket')
@@ -140,6 +150,15 @@ bucket.object('a-path/private.html').addPublicAccess()
 
 // REMOVING THE PUBLICLY READABLE ACCESS FROM A FILE  (warning: Your service account must have the 'roles/storage.objectAdmin' role)
 bucket.object('a-path/private.html').removePublicAccess()
+```
+
+### Making A Single File Publicly Readable At Creation Time
+
+It is also possible to make a single file publicly readable in a single command when the file is created:
+
+```js
+storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
+	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
 ```
 
 #### Configuring CORS On a Bucket
