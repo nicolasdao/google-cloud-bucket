@@ -21,7 +21,7 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 const _retryFn = (fn, options={}) => retry(
 	fn, 
 	() => true, 
-	{ ignoreFailure: true, retryInterval: [500, 2000], retryAttempts: 10 })
+	{ ignoreFailure: true, retryInterval: [200, 2000], retryAttempts: 10 })
 	.catch(e => {
 		if (options.retryCatch)
 			return options.retryCatch(e)
@@ -52,11 +52,13 @@ const createClient = ({ jsonKeyFile }) => {
 		keyFilename: jsonKeyFile,
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
-	//doesFileExist
+
 	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options)).then(({ data }) => data)
 	const getObject = (bucket, filePath, options) => getToken(auth).then(token => gcp.get(bucket, filePath, token, options)).then(({ data }) => data)
-	const objectExists = (bucket, filePath) => getToken(auth).then(token => gcp.doesFileExist(bucket, filePath, token)).then(({ data }) => data)
-	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token)).then(({ data }) => data)
+	
+	const objectExists = (bucket, filePath) => getToken(auth).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token)).then(({ data }) => data))
+	const getBucket = (bucket) => getToken(auth).then(token => _retryFn(() => gcp.config.get(bucket, token)).then(({ data }) => data))
+	
 	const createBucket = (bucket, options={}) => getToken(auth).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ data }) => data)
 	const deleteBucket = (bucket) => getToken(auth).then(token => gcp.bucket.delete(bucket, token)).then(({ data }) => data)
 	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
