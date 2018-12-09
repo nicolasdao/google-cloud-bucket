@@ -50,7 +50,7 @@ const createClient = ({ jsonKeyFile }) => {
 	})
 
 	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options)).then(({ data }) => data)
-	const getObject = (bucket, filePath) => getToken(auth).then(token => gcp.get(bucket, filePath, token)).then(({ data }) => data)
+	const getObject = (bucket, filePath, options) => getToken(auth).then(token => gcp.get(bucket, filePath, token, options)).then(({ data }) => data)
 	const getBucket = (bucket) => getToken(auth).then(token => gcp.config.get(bucket, token)).then(({ data }) => data)
 	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
 	const isCorsSetUp = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
@@ -81,7 +81,7 @@ const createClient = ({ jsonKeyFile }) => {
 
 	const retryGetObject = (filePath, options={}) => Promise.resolve(null).then(() => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
-		return _retryFn(() => getObject(bucket, file), options) 
+		return _retryFn(() => getObject(bucket, file, options), options) 
 	})
 
 	return {

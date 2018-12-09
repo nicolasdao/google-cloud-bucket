@@ -28,7 +28,7 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 	const payload = typeof(object) == 'string' || (object instanceof Buffer) ? object : JSON.stringify(object || {})
 	const [ bucket, ...names ] = filePath.split('/')
 
-	const { contentType='application/json' } = urlHelper.getInfo(filePath)
+	const { contentType='application/json' } = urlHelper.getInfo(`https://neap.co/${filePath}`)
 
 	let headers = merge(options.headers || {}, { 
 		'Content-Length': payload.length,
@@ -38,20 +38,20 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 	if (!headers['Content-Type'])
 		headers['Content-Type'] = contentType
 
-	return fetch.post(BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, payload)
+	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, body: payload })
 })
 
 const getBucket = (bucket, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
 
-	const getData = fetch.get(BUCKET_URL(bucket), {
+	const getData = fetch.get({ uri: BUCKET_URL(bucket), headers: {
 		Accept: 'application/json',
 		Authorization: `Bearer ${token}`
-	}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
-	const getIam = fetch.get(`${BUCKET_URL(bucket)}/iam`, {
+	}}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
+	const getIam = fetch.get({ uri: `${BUCKET_URL(bucket)}/iam`, headers: {
 		Accept: 'application/json',
 		Authorization: `Bearer ${token}`
-	}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
+	}}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
 
 	return Promise.all([getData, getIam]).then(([bucketRes, iamRes]) => {
 		if (bucketRes && bucketRes.status < 400 && bucketRes.data) {
@@ -63,14 +63,19 @@ const getBucket = (bucket, token) => Promise.resolve(null).then(() => {
 	})
 })
 
-const getBucketFile = (bucket, filepath, token) => Promise.resolve(null).then(() => {
+const getBucketFile = (bucket, filepath, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, filepath, token })
 
-	const { contentType } = urlHelper.getInfo(filepath)
+	const { contentType } = urlHelper.getInfo(`https://neap.co/${filepath}`)
 
-	return fetch.get(`${BUCKET_FILE_URL(bucket, filepath)}?alt=media`, {
-		Accept: contentType || 'application/json',
-		Authorization: `Bearer ${token}`
+	return fetch.get({ 
+		uri: `${BUCKET_FILE_URL(bucket, filepath)}?alt=media`, 
+		headers: {
+			Accept: contentType || 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		streamReader: options.streamReader,
+		dst: options.dst
 	}).then(({ status, data }) => {
 		if (status < 400)
 			return { status, data }
@@ -139,7 +144,7 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 	_validateRequiredParams({ bucket, token })
 
 	if (filepath) {
-		const { ext } = urlHelper.getInfo(filepath)
+		const { ext } = urlHelper.getInfo(`https://neap.co/${filepath}`)
 		if (!ext)
 			throw new Error('Bucket\'s folder cannot be made public. Only buckets or existing objects can be made public.')
 
@@ -147,10 +152,10 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 			entity: 'allUsers',
 			role: 'READER'
 		})
-		return fetch.post(`${BUCKET_FILE_URL(bucket, filepath)}/acl`, {
+		return fetch.post({ uri: `${BUCKET_FILE_URL(bucket, filepath)}/acl`, headers: {
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${token}`
-		}, payload).then(({ status, data }) => {
+		}, body: payload }).then(({ status, data }) => {
 			if (status < 400) {
 				data = data || {}
 				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
@@ -178,10 +183,10 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 
 			const payload = JSON.stringify({ bindings })
 
-			return fetch.put(`${BUCKET_URL(bucket)}/iam`, {
+			return fetch.put({ uri: `${BUCKET_URL(bucket)}/iam`, headers: {
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`
-			}, payload).then(({ status, data }) => {
+			}, body: payload }).then(({ status, data }) => {
 				if (status < 400) {
 					data = data || {}
 					data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
@@ -204,14 +209,14 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 	_validateRequiredParams({ bucket, token })
 
 	if (filepath) {
-		const { ext } = urlHelper.getInfo(filepath)
+		const { ext } = urlHelper.getInfo(`https://neap.co/${filepath}`)
 		if (!ext)
 			throw new Error('Bucket\'s folder cannot be made public. Only buckets or existing objects can be made public.')
 
-		return fetch.delete(`${BUCKET_FILE_URL(bucket, filepath)}/acl/allUsers`, {
+		return fetch.delete({ uri: `${BUCKET_FILE_URL(bucket, filepath)}/acl/allUsers`, headers: {
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${token}`
-		}).then(({ status, data }) => {
+		}}).then(({ status, data }) => {
 			if (status < 400) {
 				data = data || {}
 				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
@@ -244,10 +249,10 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 
 			const payload = JSON.stringify({ bindings })
 			
-			return fetch.put(`${BUCKET_URL(bucket)}/iam`, {
+			return fetch.put({ uri: `${BUCKET_URL(bucket)}/iam`, headers: {
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`
-			}, payload).then(({ status, data }) => {
+			}, body: payload }).then(({ status, data }) => {
 				if (status < 400) {
 					data = data || {}
 					data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
@@ -272,10 +277,10 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 
 	const payload = JSON.stringify(config)
 
-	return fetch.patch(`${BUCKET_URL(bucket)}`, {
+	return fetch.patch({ uri: `${BUCKET_URL(bucket)}`, headers: {
 		'Content-Type': 'application/json',
 		Authorization: `Bearer ${token}`
-	}, payload).then(({ status, data }) => {
+	}, body: payload }).then(({ status, data }) => {
 		if (status < 400) {
 			data = data || {}
 			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
@@ -297,10 +302,10 @@ const setupCors = (bucket, corsConfig={}, token, options={}) => Promise.resolve(
 	const cors = options.mode != 'delete' ? [corsConfig] : []
 	const payload = JSON.stringify({cors})
 
-	return fetch.patch(`${BUCKET_URL(bucket)}`, {
+	return fetch.patch({ uri: `${BUCKET_URL(bucket)}`, headers: {
 		'Content-Type': 'application/json',
 		Authorization: `Bearer ${token}`
-	}, payload).then(({ status, data }) => {
+	}, body: payload }).then(({ status, data }) => {
 		if (status < 400) {
 			data = data || {}
 			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`

@@ -57,9 +57,6 @@ const someObject = {
 storage.insert(someObject, 'your-bucket/a-path/filename.json') // insert an object into a bucket 'a-path/filename.json' does not need to exist
 	.then(() => storage.get('your-bucket/a-path/filename.json')) // retrieve that new object
 	.then(res => console.log(JSON.stringify(res, null, ' ')))
-// OR YOu CAN ALSO USE THIS API STYLE
-storage.bucket('your-bucket').object('a-path/filename.json').insert(someObject)
-
 
 // ADDING A HTML PAGE WITH PUBLIC ACCESS (warning: Your service account must have the 'roles/storage.objectAdmin' role)
 const html = `
@@ -73,11 +70,50 @@ const html = `
 storage.insert(html, 'your-bucket/a-path/index.html', { public: true }) 
 	.then(({ publicUri }) => console.log(`Your web page is publicly available at: ${publicUri}`)) 
 
-// UPLOADING AN IMAGE
-storage.insert(buffer, 'your-bucket/a-path/image.jpg') 
+// UPLOADING AN IMAGE (we assume we have access to an image as a buffer variable called 'imgBuffer')
+storage.insert(imgBuffer, 'your-bucket/a-path/image.jpg') 
+
+// GETTING BACK THE OBJECT
+storage.get('your-bucket/a-path/filename.json').then(obj => console.log(obj))
+
+// GETTING THE HTML BACK
+storage.get('your-bucket/a-path/index.html').then(htmlString => console.log(htmlString))
+
+// GETTING BACK THE IMAGE
+// USE CASE 1 - Loading the entire buffer in memory
+storage.get('your-bucket/a-path/image.jpg').then(imgBuffer => console.log(imgBuffer))
+
+// USE CASE 2 - Loading the image on your filesystem
+storage.get('your-bucket/a-path/image.jpg', { dst: 'some-path/image.jpg' }).then(() => console.log(`Image successfully downloaded.`))
+
+// USE CASE 3 - Piping the image buffer into a custom stream reader
+const { Writable } = require('stream')
+const customReader = new Writable({
+	write(chunk, encoding, callback) {
+		console.log('Hello chunk of image')
+		callback()
+	}
+})
+storage.get('your-bucket/a-path/image.jpg', { streamReader: customReader }).then(() => console.log(`Image successfully downloaded.`))
 ```
 
-> Notice the usage of the `public: true` flag in the `insert` statement above. This automatically makes this specific file publicly available at [https://storage.googleapis.com/your-bucket/a-path/index.html](https://storage.googleapis.com/your-bucket/a-path/index.html). If that file is supposed to stay private, then don't use that flag. To make the entire bucket public, refer to the next section.
+> Notice the usage of the `public: true` flag in the `insert` statement above. This automatically makes this specific file publicly available at [https://storage.googleapis.com/your-bucket/a-path/index.html](https://storage.googleapis.com/your-bucket/a-path/index.html). If that file is supposed to stay private, then don't use that flag. To make the entire bucket public, refer to the next section [Publicly Readable Config](#publicly-readable-config).
+
+### Bucket API
+
+The examples above show how to insert and query any storage. We've also included a variant of those APIs that are more focused on a specific bucket:
+
+```js
+// THIS API
+storage.insert(someObject, 'your-bucket/a-path/filename.json')
+// CAN BE REWRITTEN
+storage.bucket('your-bucket').object('a-path/filename.json').insert(someObject)
+
+// THIS API
+storage.get('your-bucket/a-path/filename.json').then(obj => console.log(obj))
+// CAN BE REWRITTEN
+storage.bucket('your-bucket').object('a-path/filename.json').get().then(obj => console.log(obj))
+```
 
 ### Buckets & Files Configuration
 #### Publicly Readable Config
