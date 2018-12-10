@@ -5,6 +5,7 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
+> * [Extra Precautions To Making Robust Queries](#extra-precautions-to-making-robust-queries)
 > * [Annex](#annex) 
 >    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
 > * [About Neap](#this-is-what-we-re-up-to)
@@ -36,7 +37,6 @@ Before using this package, you must first:
 5. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
 
 ## Show Me The Code
-
 ### Basics
 
 ```js
@@ -222,6 +222,22 @@ To remove CORS from a bucket:
 
 ```js
 bucket.cors.disable().then(() => console.log(`CORS successfully disabled on bucket '${bucket.name}'.`))
+```
+
+## Extra Precautions To Making Robust Queries
+### Avoiding Network Errors
+
+Networks errors (e.g. socket hang up, connect ECONNREFUSED) are a fact of life. To deal with those undeterministic errors, this library uses a simple exponential back off retry strategy, which will reprocess your read or write request for 10 seconds by default. You can increase that retry period as follow:
+
+```js
+// Retry timeout for CHECKING FILE EXISTS
+storage.exists('your-bucket/a-path/image.jpg', { timeout: 30000 }) // 30 seconds retry period timeout
+
+// Retry timeout for INSERTS
+storage.insert(someObject, 'your-bucket/a-path/filename.json', { timeout: 30000 }) // 30 seconds retry period timeout
+
+// Retry timeout for QUERIES
+storage.get('your-bucket/a-path/filename.json', { timeout: 30000 }) // 30 seconds retry period timeout
 ```
 
 # Annex

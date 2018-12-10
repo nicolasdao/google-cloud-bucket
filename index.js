@@ -21,13 +21,21 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 const _retryFn = (fn, options={}) => retry(
 	fn, 
 	() => true, 
-	{ ignoreFailure: true, retryInterval: [200, 2000], retryAttempts: 10 })
+	{ ignoreFailure: true, retryInterval: [500, 2000], timeOut: options.timeout || 10000 })
 	.catch(e => {
 		if (options.retryCatch)
 			return options.retryCatch(e)
 		else
 			throw e
 	})
+
+const _throwHttpErrorIfBadStatus = res => Promise.resolve(null).then(() => {
+	if (res && res.status && res.status >= 400) {
+		const errorMsg = `Failed with error ${res.status}.${res.data ? ` Details:\n${JSON.stringify(res.data, null, ' ')}` : ''}`
+		throw new Error(errorMsg)
+	}
+	return res 
+}) 
 
 const _getBucketAndPathname = (filePath, options={}) => {
 	if (!filePath)
@@ -53,10 +61,14 @@ const createClient = ({ jsonKeyFile }) => {
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
 
-	const putObject = (object, filePath, options) => getToken(auth).then(token => gcp.insert(object, filePath, token, options)).then(({ data }) => data)
-	const getObject = (bucket, filePath, options) => getToken(auth).then(token => gcp.get(bucket, filePath, token, options)).then(({ data }) => data)
+	const putObject = (object, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.insert(object, filePath, token, options), options))
+		.then(_throwHttpErrorIfBadStatus)
+		.then(({ data }) => data)
+	const getObject = (bucket, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
+		.then(_throwHttpErrorIfBadStatus)
+		.then(({ data }) => data)
 	
-	const objectExists = (bucket, filePath) => getToken(auth).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token)).then(({ data }) => data))
+	const objectExists = (bucket, filePath, options={}) => getToken(auth).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))
 	const getBucket = (bucket) => getToken(auth).then(token => _retryFn(() => gcp.config.get(bucket, token)).then(({ data }) => data))
 	
 	const createBucket = (bucket, options={}) => getToken(auth).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ data }) => data)
@@ -75,7 +87,7 @@ const createClient = ({ jsonKeyFile }) => {
 		return gcp.removePublicAccess(bucket, file, token)
 	}).then(({ data }) => data)
 
-	const retryPutObject = (object, filePath, options={}) => _retryFn(() => putObject(object, filePath, options), options)
+	const retryPutObject = (object, filePath, options={}) => putObject(object, filePath, options)
 		.then(data => {
 			if (data)
 				data.publicUri = `https://storage.googleapis.com/${(filePath || '').replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`
@@ -90,7 +102,7 @@ const createClient = ({ jsonKeyFile }) => {
 
 	const retryGetObject = (filePath, options={}) => Promise.resolve(null).then(() => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
-		return _retryFn(() => getObject(bucket, file, options), options) 
+		return getObject(bucket, file, options)
 	})
 
 	return {
@@ -98,12 +110,12 @@ const createClient = ({ jsonKeyFile }) => {
 		'get': retryGetObject,
 		addPublicAccess,
 		removePublicAccess,
-		exists: (filepath) => Promise.resolve(null).then(() => {
+		exists: (filepath, options={}) => Promise.resolve(null).then(() => {
 			if(!filepath)
 				throw new Error('Missing required \'filepath\' argument')
 
 			const { bucket, file } = _getBucketAndPathname(filepath, { ignoreMissingFile: true })
-			return objectExists(bucket, file)
+			return objectExists(bucket, file, options)
 		}),
 		config: (bucket) => {
 			if(!bucket)
@@ -121,7 +133,7 @@ const createClient = ({ jsonKeyFile }) => {
 			return {
 				name: bucketName,
 				'get': () => getBucket(bucketName),
-				exists: () => objectExists(bucketName),
+				exists: (options={}) => objectExists(bucketName, null, options),
 				create: (options={}) => createBucket(bucketName, options),
 				delete: () => deleteBucket(bucketName),
 				update: (config={}) => updateConfig(bucketName, config),
@@ -139,7 +151,7 @@ const createClient = ({ jsonKeyFile }) => {
 
 					return {
 						file: filePath,
-						exists: () => objectExists(bucketName, filePath),
+						exists: (options={}) => objectExists(bucketName, filePath, options),
 						'get': (options={}) => retryGetObject(posix.join(bucketName, filePath), options),
 						insert: (object, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
 						addPublicAccess: () => addPublicAccess(posix.join(bucketName, filePath)),

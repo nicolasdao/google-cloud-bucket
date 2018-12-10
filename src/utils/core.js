@@ -202,6 +202,12 @@ const batch = (col, batchSize=1) => {
 	},{ result:[], current: { value:[], size:0 } }).result
 }
 
+const getRandomNumber = (start, end) => {
+	const size = end == undefined ? start : (end - start)
+	const offset = end == undefined ? 0 : start
+	return offset + Math.floor(Math.random() * size)
+}
+
 module.exports = {
 	identity: {
 		'new': newId
@@ -222,5 +228,8 @@ module.exports = {
 		diff: getDiff,
 		same: objAreSame,
 		arrayAreDiff: arrayObjAreDiff
+	},
+	math: {
+		randomNumber: getRandomNumber
 	}
 }
