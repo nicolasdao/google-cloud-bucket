@@ -15,7 +15,7 @@
 const { fetch, urlHelper, obj: { merge } } = require('./utils')
 
 const BUCKET_LIST_URL = projectId => `https://www.googleapis.com/storage/v1/b?project=${projectId}`
-const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}`
+const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}${options.contentEncoding ? `&contentEncoding=${encodeURIComponent(options.contentEncoding)}` : ''}`
 const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
 const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
 
@@ -39,7 +39,7 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 	if (!headers['Content-Type'])
 		headers['Content-Type'] = contentType
 
-	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/')), headers, body: payload })
+	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/'), options), headers, body: payload })
 })
 
 /**

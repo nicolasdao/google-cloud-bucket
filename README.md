@@ -199,6 +199,16 @@ Once your file is publicly readable, everyone can access it at this url: [https:
 
 > WARNING: If that bucket hosts files that hsould be accessible cross domain (e.g., an RSS feed), don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
 
+
+### Setting Single File Content Encoding At Creation Time
+
+It is also possible to set a file's content encoding in a single command when the file is created:
+
+```js
+storage.insert(html, 'your-bucket/a-path/index.html', { contentEncoding: 'gzip' })
+	.then(({ publicUri }) => console.log(`Your gzipped file is available at: ${publicUri}`))
+```
+
 #### Configuring CORS On a Bucket
 
 If your files are publicly readable on the web, they might not be accessible when referenced from other websites. To enable other websites to access your files, you will have to configure [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your bucket:
