@@ -67,10 +67,13 @@ const createClient = ({ jsonKeyFile }) => {
 	const getObject = (bucket, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
 		.then(_throwHttpErrorIfBadStatus)
 		.then(({ data }) => data)
+	const listObjects = (bucket, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token), options)
+		.then(_throwHttpErrorIfBadStatus)
+		.then(({ data }) => data))
 	
 	const objectExists = (bucket, filePath, options={}) => getToken(auth).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))
 	const getBucket = (bucket) => getToken(auth).then(token => _retryFn(() => gcp.config.get(bucket, token)).then(({ data }) => data))
-	
+
 	const createBucket = (bucket, options={}) => getToken(auth).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ data }) => data)
 	const deleteBucket = (bucket) => getToken(auth).then(token => gcp.bucket.delete(bucket, token)).then(({ data }) => data)
 	const isBucketPublic = (bucket) => getToken(auth).then(token => gcp.config.isBucketPublic(bucket, token))
@@ -110,6 +113,13 @@ const createClient = ({ jsonKeyFile }) => {
 		'get': retryGetObject,
 		addPublicAccess,
 		removePublicAccess,
+		list: (filepath, options={}) => Promise.resolve(null).then(() => {
+			if(!filepath)
+				throw new Error('Missing required \'filepath\' argument')
+
+			const { bucket, file } = _getBucketAndPathname(filepath, { ignoreMissingFile: true })
+			return listObjects(bucket, file, options)
+		}),
 		exists: (filepath, options={}) => Promise.resolve(null).then(() => {
 			if(!filepath)
 				throw new Error('Missing required \'filepath\' argument')
@@ -152,6 +162,7 @@ const createClient = ({ jsonKeyFile }) => {
 					return {
 						file: filePath,
 						exists: (options={}) => objectExists(bucketName, filePath, options),
+						list: (options={}) => listObjects(bucketName, filePath, options),
 						'get': (options={}) => retryGetObject(posix.join(bucketName, filePath), options),
 						insert: (object, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
 						addPublicAccess: () => addPublicAccess(posix.join(bucketName, filePath)),

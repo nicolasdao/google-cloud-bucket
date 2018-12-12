@@ -113,6 +113,10 @@ storage.get('your-bucket/a-path/image.jpg', { streamReader: customReader })
 // TESTING IF A FILE OR A BUCKET EXISTS
 storage.exists('your-bucket/a-path/image.jpg')
 	.then(fileExists => fileExists ? console.log('File exists.') : console.log('File does not exist.'))
+
+// LISTING ALL THE FILES METADATA WITH A FILEPATH THAT STARTS WITH SPECIFIC NAME
+storage.list('your-bucket/a-path/')
+	.then(files => console.log(files))
 ```
 
 ### Bucket API
@@ -136,6 +140,13 @@ storage.exists('your-bucket/a-path/image.jpg')
 // CAN BE REWRITTEN AS FOLLOW:
 storage.bucket('your-bucket').object('a-path/image.jpg').exists()
 	.then(fileExists => fileExists ? console.log('File exists.') : console.log('File does not exist.'))
+
+// THIS API:
+storage.list('your-bucket/a-path/')
+	.then(files => console.log(files))
+// CAN BE REWRITTEN AS FOLLOW:
+storage.bucket('your-bucket').object('a-path/').list()
+	.then(files => console.log(files))
 ```
 
 ### Buckets & Files Configuration

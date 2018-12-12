@@ -144,6 +144,24 @@ const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(()
 	})
 })
 
+const filterFiles = (bucket, filepath, token, options={}) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+	const queryUrl = `${BUCKET_FILE_URL(bucket)}${filepath ? `?maxResults=1000${options.pageToken ? `&pageToken=${options.pageToken}` : ''}&prefix=${filepath.replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}` : ''}`
+	return fetch.get({ 
+		uri: queryUrl, 
+		headers: {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	}).then(({ status, data }) => {
+		if (data && (data.items || []).length == 1000 && data.nextPageToken)
+			return filterFiles(bucket, filepath, token, { pageToken: data.nextPageToken })
+				.then(({ data: moreData }) => ({ status, data: [...data.items, ...moreData] }))
+		else
+			return { status, data: data.items || [] }
+	})
+})
+
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/
 const isBucketPublic = (bucket, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
@@ -382,6 +400,7 @@ module.exports = {
 	addPublicAccess: makePublic,
 	removePublicAccess: makePrivate,
 	doesFileExist,
+	filterFiles,
 	bucket: {
 		create: createBucket,
 		delete: deleteBucket
