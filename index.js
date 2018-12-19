@@ -65,10 +65,10 @@ const createClient = ({ jsonKeyFile }) => {
 		.then(_throwHttpErrorIfBadStatus)
 		.then(({ data }) => data)
 	const getObject = (bucket, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
-		.then(_throwHttpErrorIfBadStatus)
+		.then(res => res && res.status == 404 ? { data:null } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data)
 	const listObjects = (bucket, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token), options)
-		.then(_throwHttpErrorIfBadStatus)
+		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data))
 	
 	const objectExists = (bucket, filePath, options={}) => getToken(auth).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))

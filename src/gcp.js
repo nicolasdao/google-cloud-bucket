@@ -62,11 +62,6 @@ const createBucket = (name, projectId, token, options={}) => Promise.resolve(nul
 			Authorization: `Bearer ${token}`
 		}, 
 		body: JSON.stringify(payload)
-	}).then(({ status, data }) => {
-		if (status > 399)
-			throw new Error(JSON.stringify(data, null, ' '))
-
-		return { status, data }
 	})
 })
 
@@ -116,14 +111,6 @@ const getBucketFile = (bucket, filepath, token, options={}) => Promise.resolve(n
 		},
 		streamReader: options.streamReader,
 		dst: options.dst
-	}).then(({ status, data }) => {
-		if (status < 400)
-			return { status, data }
-
-		let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-		e.code = status
-		e.data = data
-		throw e
 	})
 })
 
@@ -231,16 +218,10 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${token}`
 		}, body: payload }).then(({ status, data }) => {
-			if (status < 400) {
-				data = data || {}
-				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-				return { status, data }
-			}
-			let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-			e.code = status
-			e.data = data
-			throw e
+			data = data || {}
+			data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+			return { status, data }
 		})
 	} else
 		return getBucket(bucket, token).then(({ data }) => {
@@ -262,19 +243,10 @@ const makePublic = (bucket, filepath, token) => Promise.resolve(null).then(() =>
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`
 			}, body: payload }).then(({ status, data }) => {
-				if (status < 400) {
-					data = data || {}
-					data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-					data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-					return { status, data }
-				}
-
-				console.log(JSON.stringify(data, null, ' '))
-
-				let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-				e.code = status
-				e.data = data
-				throw e
+				data = data || {}
+				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+				return { status, data }
 			})
 		})
 })
@@ -292,16 +264,10 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 			'Content-Type': 'application/json',
 			Authorization: `Bearer ${token}`
 		}}).then(({ status, data }) => {
-			if (status < 400) {
-				data = data || {}
-				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-				return { status, data }
-			}
-			let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-			e.code = status
-			e.data = data
-			throw e
+			data = data || {}
+			data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+			return { status, data }
 		})
 	} else
 		return getBucket(bucket, token).then(({ data }) => {
@@ -328,19 +294,10 @@ const makePrivate = (bucket, filepath, token) => Promise.resolve(null).then(() =
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`
 			}, body: payload }).then(({ status, data }) => {
-				if (status < 400) {
-					data = data || {}
-					data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-					data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
-					return { status, data }
-				}
-
-				console.log(JSON.stringify(data, null, ' '))
-
-				let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-				e.code = status
-				e.data = data
-				throw e
+				data = data || {}
+				data.publicUri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+				data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${filepath}`
+				return { status, data }
 			})
 		})
 })
@@ -356,16 +313,9 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 		'Content-Type': 'application/json',
 		Authorization: `Bearer ${token}`
 	}, body: payload }).then(({ status, data }) => {
-		if (status < 400) {
-			data = data || {}
-			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
-			return { status, data }
-		}
-
-		let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-		e.code = status
-		e.data = data
-		throw e
+		data = data || {}
+		data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
+		return { status, data }
 	})
 })
 
@@ -381,16 +331,9 @@ const setupCors = (bucket, corsConfig={}, token, options={}) => Promise.resolve(
 		'Content-Type': 'application/json',
 		Authorization: `Bearer ${token}`
 	}, body: payload }).then(({ status, data }) => {
-		if (status < 400) {
-			data = data || {}
-			data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
-			return { status, data }
-		}
-
-		let e = new Error(status == 404 ? 'Object not found' : status == 401 ? 'Access denied' : 'Internal Server Error')
-		e.code = status
-		e.data = data
-		throw e
+		data = data || {}
+		data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
+		return { status, data }
 	})
 })
 

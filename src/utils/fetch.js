@@ -54,7 +54,7 @@ const _processResponse = (res, uri, options={}) => {
 
 	return getData
 		.then(data => ({ status: res.status, data, headers: res.headers }))
-		.catch(() => ({ status: 200, data: res, headers: res.headers }))
+		.catch(() => ({ status: res.status, data: res, headers: res.headers }))
 }
 
 const postData = ({ uri, headers={}, body, streamReader, dst }) => 
