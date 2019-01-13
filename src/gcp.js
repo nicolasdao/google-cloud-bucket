@@ -79,14 +79,22 @@ const deleteBucket = (bucketName, token) => Promise.resolve(null).then(() => {
 const getBucket = (bucket, token) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
 
-	const getData = fetch.get({ uri: BUCKET_URL(bucket), headers: {
-		Accept: 'application/json',
-		Authorization: `Bearer ${token}`
-	}}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
-	const getIam = fetch.get({ uri: `${BUCKET_URL(bucket)}/iam`, headers: {
-		Accept: 'application/json',
-		Authorization: `Bearer ${token}`
-	}}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
+	const getData = fetch.get({ 
+		uri: BUCKET_URL(bucket), 
+		headers: {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		parsing: 'json'
+	}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
+	const getIam = fetch.get({ 
+		uri: `${BUCKET_URL(bucket)}/iam`, 
+		headers: {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		parsing: 'json'
+	}).catch(err => ({ status: 500, data: { error: { code: 500, message: err.message, stack: err.stack } } }))
 
 	return Promise.all([getData, getIam]).then(([bucketRes, iamRes]) => {
 		if (bucketRes && bucketRes.status < 400 && bucketRes.data) {
@@ -122,7 +130,8 @@ const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(()
 		headers: {
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
-		}
+		},
+		parsing: 'json'
 	}).then(({ status, data }) => {
 		const answer = filepath 
 			? (data && (data.items || []).some(x => x) ? true : false)
@@ -139,7 +148,8 @@ const filterFiles = (bucket, filepath, token, options={}) => Promise.resolve(nul
 		headers: {
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
-		}
+		},
+		parsing: 'json'
 	}).then(({ status, data }) => {
 		if (data && (data.items || []).length == 1000 && data.nextPageToken)
 			return filterFiles(bucket, filepath, token, { pageToken: data.nextPageToken })
@@ -199,6 +209,11 @@ const isCorsSetup = (bucket, corsConfig, token) => Promise.resolve(null).then(()
 			return originMatch && methodMatch && responseHeaderMatch && maxAgeSecondsMatches
 		})
 	})
+})
+
+const getWebsiteSetup = (bucket, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, token })
+	return getBucket(bucket, token).then(({ data }) => (data || {}).website || null)
 })
 
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/
@@ -309,10 +324,15 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 
 	const payload = JSON.stringify(config)
 
-	return fetch.patch({ uri: `${BUCKET_URL(bucket)}`, headers: {
-		'Content-Type': 'application/json',
-		Authorization: `Bearer ${token}`
-	}, body: payload }).then(({ status, data }) => {
+	return fetch.patch({ 
+		uri: BUCKET_URL(bucket), 
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}, 
+		body: payload,
+		parsing: 'json'
+	}).then(({ status, data }) => {
 		data = data || {}
 		data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
 		return { status, data }
@@ -327,10 +347,40 @@ const setupCors = (bucket, corsConfig={}, token, options={}) => Promise.resolve(
 	const cors = options.mode != 'delete' ? [corsConfig] : []
 	const payload = JSON.stringify({cors})
 
-	return fetch.patch({ uri: `${BUCKET_URL(bucket)}`, headers: {
-		'Content-Type': 'application/json',
-		Authorization: `Bearer ${token}`
-	}, body: payload }).then(({ status, data }) => {
+	return fetch.patch({ 
+		uri: BUCKET_URL(bucket), 
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}, 
+		body: payload,
+		parsing: 'json'
+	}).then(({ status, data }) => {
+		data = data || {}
+		data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
+		return { status, data }
+	})
+})
+
+const setupWebsite = (bucket, webConfig={}, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucket, webConfig, token })
+
+	const payload = JSON.stringify({
+		website: {
+			mainPageSuffix: webConfig.mainPageSuffix,
+			notFoundPage: webConfig.notFoundPage
+		}
+	})
+
+	return fetch.patch({ 
+		uri: BUCKET_URL(bucket), 
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}, 
+		body: payload,
+		parsing: 'json' 
+	}).then(({ status, data }) => {
 		data = data || {}
 		data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
 		return { status, data }
@@ -356,6 +406,10 @@ module.exports = {
 			isCorsSetup,
 			setup: setupCors,
 			disable: (bucket, token) => setupCors(bucket, {}, token, { mode: 'delete' })
+		},
+		website: {
+			'get': getWebsiteSetup,
+			setup: setupWebsite
 		}
 	}
 }

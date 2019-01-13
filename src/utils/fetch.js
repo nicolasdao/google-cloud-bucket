@@ -16,13 +16,14 @@ const { getInfo } = require('./urlHelper')
  * @param  {String}   uri     				[description]
  * @param  {Writable} options.streamReader 	[description]
  * @param  {String}   options.dst 			Path to a destination file
+ * @param  {String}   options.parsing		e.g., 'json' to force the parsing method to json. Valid values: 'json' 'text'
  * @return {[type]}         				[description]
  */
 const _processResponse = (res, uri, options={}) => {
 	const { ext, contentType } = getInfo(uri || '')
 	
-	const isText = !options.dst && !options.streamReader && contentType && contentType.match(/(text|html|css|xml|javascript|rss|csv)/)
-	const isJson = !options.dst && !options.streamReader && (!ext || !contentType || contentType.match(/json/))
+	const isText = options.parsing == 'text' || (!options.dst && !options.streamReader && contentType && contentType.match(/(text|html|css|xml|javascript|rss|csv)/))
+	const isJson = options.parsing == 'json' || (!options.dst && !options.streamReader && (!ext || !contentType || contentType.match(/json/)))
 
 	const getData = isText 
 		? res.text()
@@ -57,20 +58,20 @@ const _processResponse = (res, uri, options={}) => {
 		.catch(() => ({ status: res.status, data: res, headers: res.headers }))
 }
 
-const postData = ({ uri, headers={}, body, streamReader, dst }) => 
-	fetch(uri, { method: 'POST', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst }))
+const postData = ({ uri, headers={}, body, streamReader, dst, parsing }) => 
+	fetch(uri, { method: 'POST', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst, parsing }))
 
-const putData = ({ uri, headers={}, body, streamReader, dst }) => 
-	fetch(uri, { method: 'PUT', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst }))
+const putData = ({ uri, headers={}, body, streamReader, dst, parsing }) => 
+	fetch(uri, { method: 'PUT', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst, parsing }))
 
-const patchData = ({ uri, headers={}, body, streamReader, dst }) => 
-	fetch(uri, { method: 'PATCH', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst }))
+const patchData = ({ uri, headers={}, body, streamReader, dst, parsing }) => 
+	fetch(uri, { method: 'PATCH', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst, parsing }))
 
-const deleteData = ({ uri, headers={}, body, streamReader, dst }) => 
-	fetch(uri, { method: 'DELETE', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst }))
+const deleteData = ({ uri, headers={}, body, streamReader, dst, parsing }) => 
+	fetch(uri, { method: 'DELETE', headers, body }).then(res => _processResponse(res, uri, { streamReader, dst, parsing }))
 
-const getData = ({ uri, headers={}, streamReader, dst }) => 
-	fetch(uri, { method: 'GET', headers }).then(res => _processResponse(res, uri, { streamReader, dst }))
+const getData = ({ uri, headers={}, streamReader, dst, parsing }) => 
+	fetch(uri, { method: 'GET', headers }).then(res => _processResponse(res, uri, { streamReader, dst, parsing }))
 
 module.exports = {
 	post: postData,

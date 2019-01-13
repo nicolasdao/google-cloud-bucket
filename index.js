@@ -80,6 +80,7 @@ const createClient = ({ jsonKeyFile }) => {
 	const isCorsSetUp = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
 	const setupCors = (bucket, corsConfig) => getToken(auth).then(token => gcp.config.cors.setup(bucket, corsConfig, token)).then(({ data }) => data)
 	const disableCors = (bucket) => getToken(auth).then(token => gcp.config.cors.disable(bucket, token)).then(({ data }) => data)
+	const setupWebsite = (bucket, webConfig) => getToken(auth).then(token => gcp.config.website.setup(bucket, webConfig, token)).then(({ data }) => data)
 	const updateConfig = (bucket, config={}) => getToken(auth).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
 	const addPublicAccess = filePath => getToken(auth).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
@@ -154,6 +155,13 @@ const createClient = ({ jsonKeyFile }) => {
 					exists: (corsConfig) => isCorsSetUp(bucketName, corsConfig),
 					setup: (corsConfig) => setupCors(bucketName, corsConfig),
 					disable: () => disableCors(bucketName)
+				},
+				website: {
+					// webConfig: {
+					// 		mainPageSuffix: 'index.html',
+					// 		notFoundPage: '404.html'
+					// }
+					setup: (webConfig) => setupWebsite(bucketName, webConfig)
 				},
 				object: (filePath) => {
 					if (!filePath)

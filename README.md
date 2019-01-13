@@ -5,6 +5,8 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
+>    * [Basics](#basics) 
+>    * [Configuring Your Bucket Or Your File (CORS, Public, Website)](#configuring-your-bucket-or-your-file) 
 > * [Extra Precautions To Making Robust Queries](#extra-precautions-to-making-robust-queries)
 > * [Annex](#annex) 
 >    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
@@ -55,15 +57,19 @@ const someObject = {
 }
 
 // CREATING A BUCKET (This method will fail if your bucket name is not globally unique. You also need to the role 'roles/storage.objectAdmin')
-storate.bucket('your-globally-unique-bucket-name').create()
+storage.bucket('your-globally-unique-bucket-name').create()
 	.then(data => console.log(data))
 
 // CREATING A BUCKET IN SPECIFIC LOCATION (default is US. A detailed list of all the locations can be found in the Annexes of this document)
-storate.bucket('your-globally-unique-bucket-name').create({ location: 'australia-southeast1' })
+storage.bucket('your-globally-unique-bucket-name').create({ location: 'australia-southeast1' })
 	.then(data => console.log(data))
 
 // DELETING A BUCKET
-storate.bucket('your-globally-unique-bucket-name').delete()
+storage.bucket('your-globally-unique-bucket-name').delete()
+	.then(data => console.log(data))
+
+// GET A BUCKET'S SETUP DATA 
+storage.bucket('your-globally-unique-bucket-name').get()
 	.then(data => console.log(data))
 
 // ADDING AN OBJECT
@@ -149,7 +155,7 @@ storage.bucket('your-bucket').object('a-path/').list()
 	.then(files => console.log(files))
 ```
 
-### Buckets & Files Configuration
+### Configuring Your Bucket Or Your File
 #### Publicly Readable Config
 
 This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
@@ -180,7 +186,7 @@ bucket.object('a-path/private.html').addPublicAccess()
 bucket.object('a-path/private.html').removePublicAccess()
 ```
 
-### Making A Single File Publicly Readable At Creation Time
+#### Making A Single File Publicly Readable At Creation Time
 
 It is also possible to make a single file publicly readable in a single command when the file is created:
 
@@ -233,6 +239,28 @@ To remove CORS from a bucket:
 
 ```js
 bucket.cors.disable().then(() => console.log(`CORS successfully disabled on bucket '${bucket.name}'.`))
+```
+
+#### Configuring A Bucket As A Static Website
+
+To achieve this you need to setup 5 things:
+
+1. You need to setup the service account that you've been using to manage your bucket (defined in your `service-account.json`) as a domain owner. To achieve that, the first step is to prove your ownership using [https://search.google.com/search-console/welcome](https://search.google.com/search-console/welcome). When that's done, open the __settings__ and select __User and permissions__. There, you'll be able to add a new owner, which will allow you to add the email of your service account.
+2. Create a bucket with a name matching your domain (e.g., `www.your-domain-name.com`)
+3. Make that bucket public. Refer to section [Publicly Readable Config](#publicly-readable-config) above.
+4. Add a new CNAME record in your DNS similar to this:
+
+	| Type  | Name | Value						|
+	|-------|------|----------------------------|
+	| CNAME | www  | c.storage.googleapis.com 	|
+
+5. Configure the bucket so that each index.html and the 404.html page are the default pages (otherwise, you'll have to explicitely enter http://www.your-domain-name.com/index.html to reach your website instead of simply entering http://www.your-domain-name.com):
+
+```js
+bucket.website.setup({
+	mainPageSuffix: 'index.html',
+	notFoundPage: '404.html'
+}).then(console.log)
 ```
 
 ## Extra Precautions To Making Robust Queries
