@@ -142,7 +142,6 @@ const createClient = ({ jsonKeyFile }) => {
 	const zipFiles = (bucket, filePath, options) => listObjects(bucket, filePath, options)
 		.then(objects => {
 			objects = objects || []
-			console.log(objects.length)
 			if (options.ignore) {
 				if (typeof(options.ignore) == 'string')
 					objects = objects.filter(({ name }) => name != options.ignore)
@@ -157,7 +156,6 @@ const createClient = ({ jsonKeyFile }) => {
 						return acc
 					}, objects)
 			}
-			console.log(objects.length)
 			options = options || {}
 			
 			if (options.to && options.to.bucket && options.to.bucket.path && !/\.zip$/.test(options.to.bucket.path))
