@@ -279,7 +279,7 @@ bucket.website.setup({
 const bucket = storage.bucket('your-bucket-name')
 
 bucket.object('some-folder-path').zip({ 
-	dst: {
+	to: {
 		local: 'some-path-on-your-local-machine',
 		bucket: {
 			name: 'another-existing-bucket-name', // Optional (default: Source bucket. In our example, that source bucket is 'your-bucket-name')
@@ -291,7 +291,7 @@ bucket.object('some-folder-path').zip({
 .then(({ count, data }) => {
 	console.log(`${count} files have been zipped`)
 	if (data) 
-		// 'data' is null if the 'options.dst' is defined
+		// 'data' is null if the 'options.to' is defined
 		console.log(`The zip file's size is: ${data.length/1024} KB`)
 })
 ```
