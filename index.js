@@ -53,13 +53,13 @@ const _getBucketAndPathname = (filePath, options={}) => {
 	return { bucket, file }
 }
 
-const _saveFile = ({ dst, buffer }) => new Promise((onSuccess, onFailure) => {
+const _saveFile = ({ to, buffer }) => new Promise((onSuccess, onFailure) => {
 	try {
-		if (!dst) {
-			const e = new Error('Missing required \'dst\' argument')
+		if (!to) {
+			const e = new Error('Missing required \'to\' argument')
 			onFailure(e)
 		}
-		fs.writeFile(dst, buffer, (err) => {
+		fs.writeFile(to, buffer, (err) => {
 			if (err) 
 				onFailure(err)
 			onSuccess()
@@ -133,9 +133,9 @@ const createClient = ({ jsonKeyFile }) => {
 	 * [description]
 	 * @param  {[type]} bucket   				Source Bucket
 	 * @param  {[type]} filePath 				Source path where the files are located
-	 * @param  {String} options.dst.local  		Destination in the local machine where the zip file will be stored
-	 * @param  {String} options.bucket.name  	Destination bucket in the Google Cloud Storage machine where the zip file will be stored
-	 * @param  {String} options.bucket.path  	Destination path in the destination bucket where the zip file will be stored
+	 * @param  {String} options.to.local  		Destination in the local machine where the zip file will be stored
+	 * @param  {String} options.to.bucket.name  Destination bucket in the Google Cloud Storage machine where the zip file will be stored
+	 * @param  {String} options.to.bucket.path  Destination path in the destination bucket where the zip file will be stored
 	 * @param  {String} options.ignore  		Array if strings or regex , or string or regex that will be ignored
 	 * @return {[type]}          				[description]
 	 */
@@ -160,8 +160,8 @@ const createClient = ({ jsonKeyFile }) => {
 			console.log(objects.length)
 			options = options || {}
 			
-			if (options.dst && options.dst.bucket && options.dst.bucket.path && !/\.zip$/.test(options.dst.bucket.path))
-				throw new Error('Wrong argument exception. Optional argument \'options.dst.bucket.path\' does not have a \'.zip\' extension')
+			if (options.to && options.to.bucket && options.to.bucket.path && !/\.zip$/.test(options.to.bucket.path))
+				throw new Error('Wrong argument exception. Optional argument \'options.to.bucket.path\' does not have a \'.zip\' extension')
 
 			const archive = archiver('zip', { zlib: { level: 9 } })
 			const buffer = toBuffer(archive)
@@ -186,16 +186,16 @@ const createClient = ({ jsonKeyFile }) => {
 				.then(() => archive.finalize())
 				.then(() => buffer)
 				.then(b => {
-					const dst = options.dst
-					if (dst) {
+					const to = options.to
+					if (to) {
 						const tasks = []
-						if (dst.local)
-							tasks.push(_saveFile({ dst: dst.local, buffer:b }))
+						if (to.local)
+							tasks.push(_saveFile({ to: to.local, buffer:b }))
 
-						if (dst.bucket) {
-							const dstBucket = dst.bucket.name || bucket
-							const dstPath = dst.bucket.path || 'archive.zip'
-							tasks.push(retryPutObject(b, posix.join(dstBucket, dstPath), options))
+						if (to.bucket) {
+							const toBucket = to.bucket.name || bucket
+							const toPath = to.bucket.path || 'archive.zip'
+							tasks.push(retryPutObject(b, posix.join(toBucket, toPath), options))
 						} 
 
 						return Promise.all(tasks).then(() => ({ count: objects.length, data: null }))
