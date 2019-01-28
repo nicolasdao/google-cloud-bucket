@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.8.0"></a>
+# [0.8.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.7.0...v0.8.0) (2019-01-28)
+
+
+### Features
+
+* Add support for zipping a bucket or a bucket's folder and optionally storing that zip locally and/or in another bucket ([8ca52b8](https://github.com/nicolasdao/google-cloud-bucket/commit/8ca52b8))
+
+
+
 <a name="0.7.0"></a>
 # [0.7.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.6.1...v0.7.0) (2019-01-22)
 
