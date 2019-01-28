@@ -208,12 +208,114 @@ const getRandomNumber = (start, end) => {
 	return offset + Math.floor(Math.random() * size)
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////                           START CONVERTER                           	////////////////////////////////
+
+/**
+ * Convert snake case to camel case
+ * @param  {String} s 	e.g., "hello_world"
+ * @return {String}   	e.g., "helloWorld"
+ */
+const s2cCase = s => (s || '').replace(/\s/g, '').toLowerCase().split(/(?=_.{1})/g).reduce((result, part) => result + (result ? (part.slice(1,2).toUpperCase() + part.slice(2)) : part), '')
+
+/**
+ * Convert camel case to snake case
+ * @param  {String} s 	e.g., "helloWorld"
+ * @return {String}   	e.g., "hello_world"
+ */
+const c2sCase = s => (s || '').replace(/\s/g, '').split(/(?=[A-Z]{1})/g).map(x => x.toLowerCase()).join('_')
+
+// Transforms { helloWorld: 'Nic' } to { hello_world: 'Nic' }
+const objectC2Scase = obj => {
+	if (!obj || typeof(obj) != 'object') 
+		return obj 
+
+	return Object.keys(obj).reduce((acc, key) => {
+		const v = obj[key]
+		const p = c2sCase(key)
+		if (v && typeof(v) == 'object') {
+			if (Array.isArray(v))
+				acc[p] = v.map(x => objectC2Scase(x))
+			else
+				acc[p] = objectC2Scase(v)
+		} else
+			acc[p] = v 
+		return acc
+	}, {})
+}
+
+// Transforms { hello_world: 'Nic' } to { helloWorld: 'Nic' }
+const objectS2Ccase = obj => {
+	if (!obj || typeof(obj) != 'object') 
+		return obj 
+
+	return Object.keys(obj).reduce((acc, key) => {
+		const v = obj[key]
+		const p = s2cCase(key)
+		if (v && typeof(v) == 'object') {
+			if (Array.isArray(v))
+				acc[p] = v.map(x => objectS2Ccase(x))
+			else
+				acc[p] = objectS2Ccase(v)
+		} else
+			acc[p] = v 
+		return acc
+	}, {})
+}
+
+const _supportedEncoding = { 'hex': true, 'utf8': true, 'base64': true, 'ascii': true, 'buffer': true }
+// Examples: 
+//	encoder('Hello').to('buffer')
+//	encoder('Hello').to('base64')
+//	encoder('Hello').to('base64')
+const encoder = (obj, options) => {
+	let { type } = options || {}
+	type = type || 'utf8'
+	const o = obj || ''
+	const isString = typeof(o) == 'string'
+	const isBuffer = o instanceof Buffer
+	if (!isString && !isBuffer)
+		throw new Error(`Wrong argument exception. The 'encoder' method only accept input of type 'string' or 'Buffer' (current: ${typeof(o)})`)
+	if (!_supportedEncoding[type])
+		throw new Error(`Wrong argument exception. The 'encoder' method only accept the following encoding types: 'hex', 'utf8', 'base64', 'buffer' and 'ascii' (current: ${type})`)
+	return {
+		to: encoding => {
+			encoding = encoding || 'utf8'
+			if (!_supportedEncoding[encoding])
+				throw new Error(`Wrong argument exception. The 'encoder.to' method only accept the following encoding types: 'hex', 'utf8', 'base64', 'buffer' and 'ascii' (current: ${encoding})`)
+
+			if (isString) {
+				if (encoding == 'buffer')
+					return o ? Buffer.from(o, type) : new Buffer(0)
+				else
+					return Buffer.from(o, type).toString(encoding)
+			}
+			else if (encoding == 'buffer')
+				return o 
+			else
+				return o.toString(encoding)
+		}
+	}
+}
+
+//////////////////////////                           END CONVERTER	                            ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 module.exports = {
 	identity: {
 		'new': newId
 	},
 	date: {
 		timestamp: getTimestamp
+	},
+	converter: {
+		s2cCase,
+		c2sCase,
+		objectC2Scase,
+		objectS2Ccase,
+		encoder
 	},
 	collection: {
 		batch,

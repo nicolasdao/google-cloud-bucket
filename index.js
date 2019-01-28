@@ -7,8 +7,12 @@
 */
 
 const googleAuth = require('google-auto-auth')
+const archiver = require('archiver')
+const fs = require('fs')
+const { toBuffer } = require('convert-stream')
 const { posix } = require('path')
-const { promise: { retry } } = require('./src/utils')
+const { Writable } = require('stream')
+const { promise: { retry }, collection } = require('./src/utils')
 const gcp = require('./src/gcp')
 
 const getToken = auth => new Promise((onSuccess, onFailure) => auth.getToken((err, token) => err ? onFailure(err) : onSuccess(token)))
@@ -48,6 +52,22 @@ const _getBucketAndPathname = (filePath, options={}) => {
 
 	return { bucket, file }
 }
+
+const _saveFile = ({ dst, buffer }) => new Promise((onSuccess, onFailure) => {
+	try {
+		if (!dst) {
+			const e = new Error('Missing required \'dst\' argument')
+			onFailure(e)
+		}
+		fs.writeFile(dst, buffer, (err) => {
+			if (err) 
+				onFailure(err)
+			onSuccess()
+		})
+	} catch(err) {
+		onFailure(err)
+	}
+})
 
 const createClient = ({ jsonKeyFile }) => {
 	_validateRequiredParams({ jsonKeyFile })
@@ -109,11 +129,90 @@ const createClient = ({ jsonKeyFile }) => {
 		return getObject(bucket, file, options)
 	})
 
+	/**
+	 * [description]
+	 * @param  {[type]} bucket   				Source Bucket
+	 * @param  {[type]} filePath 				Source path where the files are located
+	 * @param  {String} options.dst.local  		Destination in the local machine where the zip file will be stored
+	 * @param  {String} options.bucket.name  	Destination bucket in the Google Cloud Storage machine where the zip file will be stored
+	 * @param  {String} options.bucket.path  	Destination path in the destination bucket where the zip file will be stored
+	 * @param  {String} options.ignore  		Array if strings or regex , or string or regex that will be ignored
+	 * @return {[type]}          				[description]
+	 */
+	const zipFiles = (bucket, filePath, options) => listObjects(bucket, filePath, options)
+		.then(objects => {
+			objects = objects || []
+			console.log(objects.length)
+			if (options.ignore) {
+				if (typeof(options.ignore) == 'string')
+					objects = objects.filter(({ name }) => name != options.ignore)
+				else if (options.ignore instanceof RegExp)
+					objects = objects.filter(({ name }) => !options.ignore.test(name))
+				else if (Array.isArray(options.ignore))
+					objects = options.ignore.reduce((acc,i) => {
+						if (typeof(i) == 'string')
+							acc = acc.filter(({ name }) => name != i)
+						else if (i instanceof RegExp)
+							acc = acc.filter(({ name }) => !i.test(name))
+						return acc
+					}, objects)
+			}
+			console.log(objects.length)
+			options = options || {}
+			
+			if (options.dst && options.dst.bucket && options.dst.bucket.path && !/\.zip$/.test(options.dst.bucket.path))
+				throw new Error('Wrong argument exception. Optional argument \'options.dst.bucket.path\' does not have a \'.zip\' extension')
+
+			const archive = archiver('zip', { zlib: { level: 9 } })
+			const buffer = toBuffer(archive)
+			// Load the files by batch of 50
+			return collection.batch(objects, 50).reduce((job,filesBatch) => job.then(() => {
+				return Promise.all(filesBatch.map(obj => {
+					let chunks = []
+					const streamReader = new Writable({
+						write(chunk, encoding, callback) {
+							//console.log('HELOOOOOO: ', encoding)
+							chunks.push(chunk)
+							callback()
+						}
+					})
+					const objName = obj.name ? `${obj.bucket}/${obj.name}` : obj.bucket
+					return retryGetObject(objName, { streamReader, timeout: 55 * 60 * 1000 }).then(() => {
+						archive.append(Buffer.concat(chunks), { name: obj.name })
+						chunks = null
+					})
+				}))
+			}), Promise.resolve(null))
+				.then(() => archive.finalize())
+				.then(() => buffer)
+				.then(b => {
+					const dst = options.dst
+					if (dst) {
+						const tasks = []
+						if (dst.local)
+							tasks.push(_saveFile({ dst: dst.local, buffer:b }))
+
+						if (dst.bucket) {
+							const dstBucket = dst.bucket.name || bucket
+							const dstPath = dst.bucket.path || 'archive.zip'
+							tasks.push(retryPutObject(b, posix.join(dstBucket, dstPath), options))
+						} 
+
+						return Promise.all(tasks).then(() => ({ count: objects.length, data: null }))
+					} else
+						return { count: objects.length, data: b }
+				})
+		})
+
 	return {
 		insert: retryPutObject,
 		'get': retryGetObject,
 		addPublicAccess,
 		removePublicAccess,
+		zip: (filePath, options) => {
+			const { bucket, file } = _getBucketAndPathname(filePath)
+			return zipFiles(bucket, file, options)
+		},
 		list: (filepath, options={}) => Promise.resolve(null).then(() => {
 			if(!filepath)
 				throw new Error('Missing required \'filepath\' argument')
@@ -169,6 +268,7 @@ const createClient = ({ jsonKeyFile }) => {
 
 					return {
 						file: filePath,
+						zip: (options={}) => zipFiles(bucketName, filePath, options),
 						exists: (options={}) => objectExists(bucketName, filePath, options),
 						list: (options={}) => listObjects(bucketName, filePath, options),
 						'get': (options={}) => retryGetObject(posix.join(bucketName, filePath), options),

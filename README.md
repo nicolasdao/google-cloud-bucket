@@ -7,7 +7,8 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 > * [How To Use It](#how-to-use-it) 
 >    * [Basics](#basics) 
 >    * [Configuring Your Bucket Or Your File (CORS, Public, Website)](#configuring-your-bucket-or-your-file) 
-> * [Extra Precautions To Making Robust Queries](#extra-precautions-to-making-robust-queries)
+>    * [Zipping Files](#zipping-files) 
+> * [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 > * [Annex](#annex) 
 >    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
 > * [About Neap](#this-is-what-we-re-up-to)
@@ -200,7 +201,7 @@ Once your file is publicly readable, everyone can access it at this url: [https:
 > WARNING: If that bucket hosts files that hsould be accessible cross domain (e.g., an RSS feed), don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
 
 
-### Setting Single File Content Encoding At Creation Time
+#### Setting Single File Content Encoding At Creation Time
 
 It is also possible to set a file's content encoding in a single command when the file is created:
 
@@ -272,8 +273,30 @@ bucket.website.setup({
 	notFoundPage: '404.html'
 }).then(console.log)
 ```
+### Zipping Files
 
-## Extra Precautions To Making Robust Queries
+```js
+const bucket = storage.bucket('your-bucket-name')
+
+bucket.object('some-folder-path').zip({ 
+	dst: {
+		local: 'some-path-on-your-local-machine',
+		bucket: {
+			name: 'another-existing-bucket-name', // Optional (default: Source bucket. In our example, that source bucket is 'your-bucket-name')
+			path: 'some-folder-path.zip' // Optional (default: 'archive.zip'). If specified, must have the '.zip' extension.
+		}
+	}, 
+	ignore:[/\.png$/, /\.jpg$/, /\.html$/] // Optional. Array of strings or regex
+})
+.then(({ count, data }) => {
+	console.log(`${count} files have been zipped`)
+	if (data) 
+		// 'data' is null if the 'options.dst' is defined
+		console.log(`The zip file's size is: ${data.length/1024} KB`)
+})
+```
+
+## Extra Precautions To Make Robust Queries
 ### Avoiding Network Errors
 
 Networks errors (e.g. socket hang up, connect ECONNREFUSED) are a fact of life. To deal with those undeterministic errors, this library uses a simple exponential back off retry strategy, which will reprocess your read or write request for 10 seconds by default. You can increase that retry period as follow:
