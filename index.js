@@ -131,18 +131,18 @@ const createClient = ({ jsonKeyFile }) => {
 
 	/**
 	 * [description]
-	 * @param  {[type]} bucket   								Source Bucket
-	 * @param  {[type]} filePath 								Source path where the files are located
-	 * @param  {String} options.to.local  						Destination in the local machine where the zip file will be stored
-	 * @param  {String} options.to.bucket.name  				Destination bucket in the Google Cloud Storage machine where the zip file will be stored
-	 * @param  {String} options.to.bucket.path  				Destination path in the destination bucket where the zip file will be stored
-	 * @param  {String} options.ignore  						Array if strings or regex , or string or regex that will be ignored
-	 * @param  {String} options.eventHandlers['files-listed']	
-	 * @param  {String} options.eventHandlers['file-received']
-	 * @param  {String} options.eventHandlers['finished']
-	 * @param  {String} options.eventHandlers['saved']
-	 * @param  {String} options.eventHandlers['error']
-	 * @return {[type]}          								[description]
+	 * @param  {[type]} bucket   						Source Bucket
+	 * @param  {[type]} filePath 						Source path where the files are located
+	 * @param  {String} options.to.local  				Destination in the local machine where the zip file will be stored
+	 * @param  {String} options.to.bucket.name  		Destination bucket in the Google Cloud Storage machine where the zip file will be stored
+	 * @param  {String} options.to.bucket.path  		Destination path in the destination bucket where the zip file will be stored
+	 * @param  {String} options.ignore  				Array if strings or regex , or string or regex that will be ignored
+	 * @param  {String} options.on['files-listed']	
+	 * @param  {String} options.on['file-received']
+	 * @param  {String} options.on['finished']
+	 * @param  {String} options.on['saved']
+	 * @param  {String} options.on['error']
+	 * @return {[type]}          						[description]
 	 */
 	const zipFiles = (bucket, filePath, options) => listObjects(bucket, filePath, options)
 		.then(objects => {
@@ -154,11 +154,11 @@ const createClient = ({ jsonKeyFile }) => {
 				return !isNaN(fileSize) ? (s+fileSize) : s
 			}, 0)
 			
-			const eventHandlers = options.eventHandlers || {}
-			const onFilesListed = eventHandlers['files-listed'] || (() => null)
-			const onFileReceived = eventHandlers['file-received'] || (() => null)
-			const onFilesZipped = eventHandlers['finished'] || (() => null)
-			const onFilesSaved = eventHandlers['saved'] || (() => null)
+			const on = options.on || {}
+			const onFilesListed = on['files-listed'] || (() => null)
+			const onFileReceived = on['file-received'] || (() => null)
+			const onFilesZipped = on['finished'] || (() => null)
+			const onFilesSaved = on['saved'] || (() => null)
 			onFilesListed({ count: objects.length, size: totalSize, data:objects })
 			
 			if (options.ignore) {
@@ -227,7 +227,7 @@ const createClient = ({ jsonKeyFile }) => {
 				})
 		})
 		.catch(err => {
-			const onError = ((options || {}).eventHandlers || {})['error']
+			const onError = ((options || {}).on || {})['error']
 			if (onError)
 				onError(err)
 			else

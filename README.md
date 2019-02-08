@@ -298,7 +298,7 @@ bucket.object('some-folder-path').zip({
 
 __*Extra Options*__
 
-You can also track the various steps of the zipping process with the optional `eventHandlers` object:
+You can also track the various steps of the zipping process with the optional `on` object:
 
 ```js
 const bucket = storage.bucket('your-bucket-name')
@@ -311,7 +311,7 @@ bucket.object('some-folder-path').zip({
 			path: 'some-folder-path.zip' 			// Optional (default: 'archive.zip'). If specified, must have the '.zip' extension.
 		}
 	}, 
-	eventHandlers:{
+	on:{
 		'files-listed': (files) => {
 			console.log(`Total number of files to be zipped: ${files.count}`)
 			console.log(`Raw size: ${(files.size/1024/1024).toFixed(1)} MB`)
