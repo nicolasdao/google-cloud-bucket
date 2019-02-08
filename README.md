@@ -282,11 +282,54 @@ bucket.object('some-folder-path').zip({
 	to: {
 		local: 'some-path-on-your-local-machine',
 		bucket: {
-			name: 'another-existing-bucket-name', // Optional (default: Source bucket. In our example, that source bucket is 'your-bucket-name')
-			path: 'some-folder-path.zip' // Optional (default: 'archive.zip'). If specified, must have the '.zip' extension.
+			name: 'another-existing-bucket-name', 	// Optional (default: Source bucket. In our example, that source bucket is 'your-bucket-name')
+			path: 'some-folder-path.zip' 			// Optional (default: 'archive.zip'). If specified, must have the '.zip' extension.
 		}
 	}, 
 	ignore:[/\.png$/, /\.jpg$/, /\.html$/] // Optional. Array of strings or regex
+})
+.then(({ count, data }) => {
+	console.log(`${count} files have been zipped`)
+	if (data) 
+		// 'data' is null if the 'options.to' is defined
+		console.log(`The zip file's size is: ${data.length/1024} KB`)
+})
+```
+
+__*Extra Options*__
+
+You can also track the various steps of the zipping process with the optional `eventHandlers` object:
+
+```js
+const bucket = storage.bucket('your-bucket-name')
+
+bucket.object('some-folder-path').zip({ 
+	to: {
+		local: 'some-path-on-your-local-machine',
+		bucket: {
+			name: 'another-existing-bucket-name', 	// Optional (default: Source bucket. In our example, that source bucket is 'your-bucket-name')
+			path: 'some-folder-path.zip' 			// Optional (default: 'archive.zip'). If specified, must have the '.zip' extension.
+		}
+	}, 
+	eventHandlers:{
+		'files-listed': (files) => {
+			console.log(`Total number of files to be zipped: ${files.count}`)
+			console.log(`Raw size: ${(files.size/1024/1024).toFixed(1)} MB`)
+			// 'files.data' is an array of all the files' details
+		},
+		'file-received': ({ file, size }) => {
+			console.log(`File ${file} (byte size: ${size}) is being zipped`)
+		},
+		'finished': ({ size }) => {
+			console.log(`Zip process completed. The zip file's size is ${size} bytes`)
+		},
+		'saved': () => {
+			console.log('The zipped file has been saved')
+		},
+		'error': err => {
+			console.log(`${err.message}\n${err.stack}`)
+		}
+	}
 })
 .then(({ count, data }) => {
 	console.log(`${count} files have been zipped`)

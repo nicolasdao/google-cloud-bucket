@@ -131,17 +131,36 @@ const createClient = ({ jsonKeyFile }) => {
 
 	/**
 	 * [description]
-	 * @param  {[type]} bucket   				Source Bucket
-	 * @param  {[type]} filePath 				Source path where the files are located
-	 * @param  {String} options.to.local  		Destination in the local machine where the zip file will be stored
-	 * @param  {String} options.to.bucket.name  Destination bucket in the Google Cloud Storage machine where the zip file will be stored
-	 * @param  {String} options.to.bucket.path  Destination path in the destination bucket where the zip file will be stored
-	 * @param  {String} options.ignore  		Array if strings or regex , or string or regex that will be ignored
-	 * @return {[type]}          				[description]
+	 * @param  {[type]} bucket   								Source Bucket
+	 * @param  {[type]} filePath 								Source path where the files are located
+	 * @param  {String} options.to.local  						Destination in the local machine where the zip file will be stored
+	 * @param  {String} options.to.bucket.name  				Destination bucket in the Google Cloud Storage machine where the zip file will be stored
+	 * @param  {String} options.to.bucket.path  				Destination path in the destination bucket where the zip file will be stored
+	 * @param  {String} options.ignore  						Array if strings or regex , or string or regex that will be ignored
+	 * @param  {String} options.eventHandlers['files-listed']	
+	 * @param  {String} options.eventHandlers['file-received']
+	 * @param  {String} options.eventHandlers['finished']
+	 * @param  {String} options.eventHandlers['saved']
+	 * @param  {String} options.eventHandlers['error']
+	 * @return {[type]}          								[description]
 	 */
 	const zipFiles = (bucket, filePath, options) => listObjects(bucket, filePath, options)
 		.then(objects => {
 			objects = objects || []
+			options = options || {}
+
+			const totalSize = objects.reduce((s,{size}) => {
+				const fileSize = size*1
+				return !isNaN(fileSize) ? (s+fileSize) : s
+			}, 0)
+			
+			const eventHandlers = options.eventHandlers || {}
+			const onFilesListed = eventHandlers['files-listed'] || (() => null)
+			const onFileReceived = eventHandlers['file-received'] || (() => null)
+			const onFilesZipped = eventHandlers['finished'] || (() => null)
+			const onFilesSaved = eventHandlers['saved'] || (() => null)
+			onFilesListed({ count: objects.length, size: totalSize, data:objects })
+			
 			if (options.ignore) {
 				if (typeof(options.ignore) == 'string')
 					objects = objects.filter(({ name }) => name != options.ignore)
@@ -156,7 +175,6 @@ const createClient = ({ jsonKeyFile }) => {
 						return acc
 					}, objects)
 			}
-			options = options || {}
 			
 			if (options.to && options.to.bucket && options.to.bucket.path && !/\.zip$/.test(options.to.bucket.path))
 				throw new Error('Wrong argument exception. Optional argument \'options.to.bucket.path\' does not have a \'.zip\' extension')
@@ -176,7 +194,9 @@ const createClient = ({ jsonKeyFile }) => {
 					})
 					const objName = obj.name ? `${obj.bucket}/${obj.name}` : obj.bucket
 					return retryGetObject(objName, { streamReader, timeout: 55 * 60 * 1000 }).then(() => {
-						archive.append(Buffer.concat(chunks), { name: obj.name })
+						const b = Buffer.concat(chunks)
+						onFileReceived({ file: obj.name, size: b.length })
+						archive.append(b, { name: obj.name })
 						chunks = null
 					})
 				}))
@@ -184,6 +204,7 @@ const createClient = ({ jsonKeyFile }) => {
 				.then(() => archive.finalize())
 				.then(() => buffer)
 				.then(b => {
+					onFilesZipped({ size:b.length })
 					const to = options.to
 					if (to) {
 						const tasks = []
@@ -200,6 +221,17 @@ const createClient = ({ jsonKeyFile }) => {
 					} else
 						return { count: objects.length, data: b }
 				})
+				.then(res => {
+					onFilesSaved(res)
+					return res
+				})
+		})
+		.catch(err => {
+			const onError = ((options || {}).eventHandlers || {})['error']
+			if (onError)
+				onError(err)
+			else
+				throw err
 		})
 
 	return {
