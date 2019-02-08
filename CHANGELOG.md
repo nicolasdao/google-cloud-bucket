@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.10.0"></a>
+# [0.10.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.9.2...v0.10.0) (2019-02-08)
+
+
+### Features
+
+* Add support for event handlers during the zipping process ([6872e77](https://github.com/nicolasdao/google-cloud-bucket/commit/6872e77))
+
+
+
 <a name="0.9.2"></a>
 ## [0.9.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.9.1...v0.9.2) (2019-01-28)
 
