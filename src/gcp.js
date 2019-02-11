@@ -142,7 +142,7 @@ const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(()
 
 const filterFiles = (bucket, filepath, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
-	const queryUrl = `${BUCKET_FILE_URL(bucket)}${filepath ? `?maxResults=1000${options.pageToken ? `&pageToken=${options.pageToken}` : ''}&prefix=${filepath.replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}` : ''}`
+	const queryUrl = `${BUCKET_FILE_URL(bucket)}${filepath ? `?maxResults=1000${options.pageToken ? `&pageToken=${encodeURIComponent(options.pageToken)}` : ''}&prefix=${filepath.replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}` : ''}`
 	return fetch.get({ 
 		uri: queryUrl, 
 		headers: {
