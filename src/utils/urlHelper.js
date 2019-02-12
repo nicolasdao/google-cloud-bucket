@@ -156,7 +156,10 @@ const _supportedContentType = {
 	'.woff2': 'font/woff2',
 	'.woff': 'application/font-woff',
 	'.ttf': 'application/font-sfnt',
-	'.otf': 'application/font-sfnt'
+	'.otf': 'application/font-sfnt',
+	// text
+	'.txt': 'text/plain',
+	'.md': 'text/plain'
 }
 const _getContentType = (ext) => {
 	if (!ext)
