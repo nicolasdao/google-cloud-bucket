@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.11.3"></a>
+## [0.11.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.11.2...v0.11.3) (2019-02-19)
+
+
+### Bug Fixes
+
+* Fail to add non truthy value to a file ([c16fe07](https://github.com/nicolasdao/google-cloud-bucket/commit/c16fe07))
+
+
+
 <a name="0.11.2"></a>
 ## [0.11.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.11.1...v0.11.2) (2019-02-12)
 
