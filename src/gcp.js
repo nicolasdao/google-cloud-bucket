@@ -26,7 +26,8 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 
 const putObject = (object, filePath, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ object, filePath, token })
-	const payload = typeof(object) == 'string' || (object instanceof Buffer) ? object : JSON.stringify(object || {})
+	const t = typeof(object)
+	const payload = t == 'string' || t == 'number' || t == 'boolean' || (object instanceof Buffer) ? object : JSON.stringify(object || {})
 	const [ bucket, ...names ] = filePath.split('/')
 
 	const { contentType='application/json' } = urlHelper.getInfo(`https://neap.co/${filePath}`)
