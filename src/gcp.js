@@ -20,7 +20,7 @@ const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeUR
 const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
 
 const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => {
-	if (!params[p])
+	if (params[p] === null || params[p] === undefined)
 		throw new Error(`Parameter '${p}' is required.`)
 })
 

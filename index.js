@@ -33,6 +33,24 @@ const _retryFn = (fn, options={}) => retry(
 			throw e
 	})
 
+const _retryPutFn = (fn, options={}) => retry(
+	fn, 
+	res => {
+		//console.log(`STATUS: ${res.status}`)
+		if (res && res.status == 429) {
+			//console.log('TOO MANY UPDATES')
+			return false
+		} else
+			return true
+	}, 
+	{ ignoreFailure: true, retryInterval: [800, 2000], timeOut: options.timeout || 10000 })
+	.catch(e => {
+		if (options.retryCatch)
+			return options.retryCatch(e)
+		else
+			throw e
+	})
+
 const _throwHttpErrorIfBadStatus = res => Promise.resolve(null).then(() => {
 	if (res && res.status && res.status >= 400) {
 		const errorMsg = `Failed with error ${res.status}.${res.data ? ` Details:\n${JSON.stringify(res.data, null, ' ')}` : ''}`
@@ -81,7 +99,7 @@ const createClient = ({ jsonKeyFile }) => {
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
 
-	const putObject = (object, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.insert(object, filePath, token, options), options))
+	const putObject = (object, filePath, options) => getToken(auth).then(token => _retryPutFn(() => gcp.insert(object, filePath, token, options), options))
 		.then(_throwHttpErrorIfBadStatus)
 		.then(({ data }) => data)
 	const getObject = (bucket, filePath, options) => getToken(auth).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
