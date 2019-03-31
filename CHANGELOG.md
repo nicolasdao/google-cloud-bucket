@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.12.0"></a>
+# [0.12.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.11.4...v0.12.0) (2019-03-31)
+
+
+### Features
+
+* Add support for listing all buckets and support for accepting external OAuth2 token ([10c55a5](https://github.com/nicolasdao/google-cloud-bucket/commit/10c55a5))
+
+
+
 <a name="0.11.4"></a>
 ## [0.11.4](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.11.3...v0.11.4) (2019-02-19)
 
