@@ -6,15 +6,48 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-
 // Uploading data: https://cloud.google.com/storage/docs/json_api/v1/how-tos/upload
 // Best practices: https://cloud.google.com/storage/docs/json_api/v1/how-tos/performance
 // Object versioning: https://cloud.google.com/storage/docs/object-versioning
 // Resumable upload: https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload
+// Partial Response: https://cloud.google.com/storage/docs/json_api/v1/how-tos/performance#partial-response
 
 const { fetch, urlHelper, obj: { merge } } = require('./utils')
 
-const BUCKET_LIST_URL = projectId => `https://www.googleapis.com/storage/v1/b?project=${projectId}`
+// Bucket Object Schema:
+// =====================
+// kind: 'storage#bucket',
+// id: 'your-bucket-name',
+// selfLink: 'https://www.googleapis.com/storage/v1/b/your-bucket-name',
+// projectNumber: '1233456',
+// name: 'your-bucket-name',
+// timeCreated: '2019-01-19T07:01:07.063Z',
+// updated: '2019-01-19T07:01:15.110Z',
+// metageneration: '4',
+// iamConfiguration: { bucketPolicyOnly: [Object] },
+// location: 'ASIA',
+// website: { mainPageSuffix: 'index.html', notFoundPage: '404.html' },
+// cors: [ [Object] ],
+// storageClass: 'STANDARD',
+// etag: 'CAQ='
+
+/**
+ * [description]
+ * @param  {String} projectId 			[description]
+ * @param  {Number} options.maxResults 	[description]
+ * @param  {String} options.pageToken 	[description]
+ * @param  {String} options.prefix 		[description]
+ * @return {[type]}           			[description]
+ */
+const BUCKET_LIST_URL = (projectId, options) => {
+	const { maxResults, pageToken, prefix } = options || {}
+	const query = [`project=${projectId}`]
+	if (maxResults) query.push(`maxResults=${maxResults}`)
+	if (pageToken) query.push(`pageToken=${pageToken}`)
+	if (prefix) query.push(`prefix=${prefix}`)
+
+	return `https://www.googleapis.com/storage/v1/b?${query.join('&')}`
+}
 const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}${options.contentEncoding ? `&contentEncoding=${encodeURIComponent(options.contentEncoding)}` : ''}`
 const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
 const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
@@ -41,6 +74,37 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 		headers['Content-Type'] = contentType
 
 	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/'), options), headers, body: payload })
+})
+
+/**
+ * Lists all buckets for project ID
+ * 
+ * @param  {String} projectId 			[description]
+ * @param  {String} token     			[description]
+ * @return {[type]}           			[description]
+ */
+const listBuckets = (projectId, token, options) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ projectId, token })
+	options = options || {}
+
+	return fetch.get({ 
+		uri: BUCKET_LIST_URL(projectId, options), 
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	}).then(({ status, data }) => {
+		const maxResults = options.maxResults === undefined ? 1000 : options.maxResults
+		const items = data && data.items ? data.items : []
+		const l = items.length
+		if (l <= maxResults || !data.nextPageToken)
+			return { status, data:items }
+		else
+			return listBuckets(projectId, token, merge(options, { maxResults:maxResults - l, pageToken:data.nextPageToken })).then(({ data:restData }) => {
+				items.push(...restData)
+				return { status, data:items }
+			})
+	})
 })
 
 /**
@@ -397,7 +461,8 @@ module.exports = {
 	filterFiles,
 	bucket: {
 		create: createBucket,
-		delete: deleteBucket
+		delete: deleteBucket,
+		list: listBuckets
 	},
 	config: {
 		'get': getBucket,

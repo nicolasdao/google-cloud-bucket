@@ -5,9 +5,11 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
->    * [Basics](#basics) 
->    * [Configuring Your Bucket Or Your File (CORS, Public, Website)](#configuring-your-bucket-or-your-file) 
->    * [Zipping Files](#zipping-files) 
+>	- [Basics](#basics) 
+>	- [Configuring Your Bucket Or Your File (CORS, Public, Website)](#configuring-your-bucket-or-your-file) 
+>	- [Zipping Files](#zipping-files) 
+>	- [3 Ways To Create a Client](#3-ways-to-create-a-client)
+>	- [Using An External OAuth2 Token](#using-an-external-oauth2-token)
 > * [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 > * [Annex](#annex) 
 >    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
@@ -28,16 +30,14 @@ Before using this package, you must first:
 
 1. Have a Google Cloud Account.
 
-2. Have a bucket in that Google Account.
-
-3. Have a Service Account set up with the following 2 roles:
+2. Have a Service Account set up with the following 2 roles:
 	- `roles/storage.objectCreator`
 	- `roles/storage.objectAdmin` (only if you want to update access to object or create/delete buckets)
 	- `roles/storage.admin` (only if you want to update access to an entire bucket)
 
-4. Get the JSON keys file for that Service Account above
+3. Get the JSON keys file for that Service Account above
 
-5. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
+4. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
 
 ## Show Me The Code
 ### Basics
@@ -49,6 +49,9 @@ const { client } = require('google-cloud-bucket')
 const storage = client.new({ 
 	jsonKeyFile: join(__dirname, './service-account.json') 
 })
+
+// LISTING ALL THE BUCKETS IN THAT PROJECT 
+storage.list().then(console.log)
 
 const someObject = {
 	firstname: 'Nicolas',
@@ -265,7 +268,7 @@ To achieve this you need to setup 5 things:
 	|-------|------|----------------------------|
 	| CNAME | www  | c.storage.googleapis.com 	|
 
-5. Configure the bucket so that each index.html and the 404.html page are the default pages (otherwise, you'll have to explicitely enter http://www.your-domain-name.com/index.html to reach your website instead of simply entering http://www.your-domain-name.com):
+5. Configure the bucket so that each index.html and the 404.html page are the default pages (otherwise, you'll have to explicitly enter http://www.your-domain-name.com/index.html to reach your website instead of simply entering http://www.your-domain-name.com):
 
 ```js
 bucket.website.setup({
@@ -338,6 +341,50 @@ bucket.object('some-folder-path').zip({
 		console.log(`The zip file's size is: ${data.length/1024} KB`)
 })
 ```
+
+### 3 Ways To Create a Client
+#### 1. Using A `service-account.json`
+
+We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
+
+```js
+const storage = client.new({ 
+	jsonKeyFile: join(__dirname, './service-account.json') 
+})
+```
+
+#### 2. Using a ClientEmail PrivateKey & ProjectId
+
+This method is similar to the previous one. You should have dowloaded a `service-account.json`, but instead of providing its path, you provide some of its details explicitly:
+
+```js
+const storage = client.new({ 
+	clientEmail: 'some-client-email', 
+	privateKey: 'some-secret-private-key',
+	projectId: 'your-project-id'
+})
+```
+
+#### 3. Using a ProjectId
+
+If you're managing an Google Cloud OAuth2 token yourself (most likely using the [`google-auto-auth`](https://www.npmjs.com/package/google-auto-auth) library), you are not required to explicitly pass account details like what was done in the previous 2 approaches. You can simply specify the `projectId`:
+
+```js
+const storage = client.new({ projectId: 'your-project-id' })
+```
+
+Refer to the next section to see how to pass an OAuth2 token.
+
+### Using An External OAuth2 Token
+
+If you've used the 3rd method to create a client (i.e. [3. Using a ProjectId](#3-using-a-projectid)), then all the method you use require an explicit OAuth2 token:
+
+```js
+storage.list({ token }).then(console.log)
+```
+
+All method accept a last optional argument object.
+
 
 ## Extra Precautions To Make Robust Queries
 ### Avoiding Network Errors
