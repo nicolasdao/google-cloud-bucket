@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.12.2"></a>
+## [0.12.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.12.1...v0.12.2) (2019-04-02)
+
+
+### Features
+
+* Add support 'insertFile' which allows to upload a file on local machine to Google Cloud Storage ([e110674](https://github.com/nicolasdao/google-cloud-bucket/commit/e110674))
+
+
+
 <a name="0.12.1"></a>
 ## [0.12.1](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.12.0...v0.12.1) (2019-04-02)
 
