@@ -5,12 +5,17 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
+>	- [Prerequisite](#prerequisite)
 >	- [Basics](#basics) 
 >	- [Configuring Your Bucket Or Your File (CORS, Public, Website)](#configuring-your-bucket-or-your-file) 
 >	- [Zipping Files](#zipping-files) 
 >	- [3 Ways To Create a Client](#3-ways-to-create-a-client)
+>	- [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 >	- [Using An External OAuth2 Token](#using-an-external-oauth2-token)
-> * [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
+> * [Full API Doc](#full-api-doc)
+>	- [Storage API](#storage-api)
+>	- [Bucket API](#bucket-api)
+>	- [BucketObject API](#bucketobject-api)
 > * [Annex](#annex) 
 >    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
 > * [About Neap](#this-is-what-we-re-up-to)
@@ -23,7 +28,6 @@ npm i google-cloud-bucket --save
 ```
 
 # How To Use It
-
 ## Prerequisite
 
 Before using this package, you must first:
@@ -39,8 +43,7 @@ Before using this package, you must first:
 
 4. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
 
-## Show Me The Code
-### Basics
+## Basics
 
 ```js
 const { join } = require('path')
@@ -129,7 +132,7 @@ storage.list('your-bucket/a-path/')
 	.then(files => console.log(files))
 ```
 
-### Bucket API
+__*Bucket API*__
 
 The examples above demonstrate how to insert and query any storage. We've also included a variant of those APIs that are more focused on the bucket:
 
@@ -159,8 +162,8 @@ storage.bucket('your-bucket').object('a-path/').list()
 	.then(files => console.log(files))
 ```
 
-### Configuring Your Bucket Or Your File
-#### Publicly Readable Config
+## Configuring Your Bucket Or Your File
+### Publicly Readable Config
 
 This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
 
@@ -190,7 +193,7 @@ bucket.object('a-path/private.html').addPublicAccess()
 bucket.object('a-path/private.html').removePublicAccess()
 ```
 
-#### Making A Single File Publicly Readable At Creation Time
+### Making A Single File Publicly Readable At Creation Time
 
 It is also possible to make a single file publicly readable in a single command when the file is created:
 
@@ -204,7 +207,7 @@ Once your file is publicly readable, everyone can access it at this url: [https:
 > WARNING: If that bucket hosts files that hsould be accessible cross domain (e.g., an RSS feed), don't forget to also set up CORS (next section [Configuring CORS On a Bucket](#configuring-cors-on-a-bucket)).
 
 
-#### Setting Single File Content Encoding At Creation Time
+### Setting Single File Content Encoding At Creation Time
 
 It is also possible to set a file's content encoding in a single command when the file is created:
 
@@ -213,7 +216,7 @@ storage.insert(html, 'your-bucket/a-path/index.html', { contentEncoding: 'gzip' 
 	.then(({ publicUri }) => console.log(`Your gzipped file is available at: ${publicUri}`))
 ```
 
-#### Configuring CORS On a Bucket
+### Configuring CORS On a Bucket
 
 If your files are publicly readable on the web, they might not be accessible when referenced from other websites. To enable other websites to access your files, you will have to configure [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your bucket:
 
@@ -255,7 +258,7 @@ To remove CORS from a bucket:
 bucket.cors.disable().then(() => console.log(`CORS successfully disabled on bucket '${bucket.name}'.`))
 ```
 
-#### Configuring A Bucket As A Static Website
+### Configuring A Bucket As A Static Website
 
 To achieve this you need to setup 5 things:
 
@@ -276,7 +279,7 @@ bucket.website.setup({
 	notFoundPage: '404.html'
 }).then(console.log)
 ```
-### Zipping Files
+## Zipping Files
 
 ```js
 const bucket = storage.bucket('your-bucket-name')
@@ -342,8 +345,8 @@ bucket.object('some-folder-path').zip({
 })
 ```
 
-### 3 Ways To Create a Client
-#### 1. Using A `service-account.json`
+## 3 Ways To Create a Client
+### 1. Using A `service-account.json`
 
 We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
 
@@ -353,7 +356,7 @@ const storage = client.new({
 })
 ```
 
-#### 2. Using a ClientEmail PrivateKey & ProjectId
+### 2. Using a ClientEmail PrivateKey & ProjectId
 
 This method is similar to the previous one. You should have dowloaded a `service-account.json`, but instead of providing its path, you provide some of its details explicitly:
 
@@ -365,7 +368,7 @@ const storage = client.new({
 })
 ```
 
-#### 3. Using a ProjectId
+### 3. Using a ProjectId
 
 If you're managing an Google Cloud OAuth2 token yourself (most likely using the [`google-auto-auth`](https://www.npmjs.com/package/google-auto-auth) library), you are not required to explicitly pass account details like what was done in the previous 2 approaches. You can simply specify the `projectId`:
 
@@ -374,17 +377,6 @@ const storage = client.new({ projectId: 'your-project-id' })
 ```
 
 Refer to the next section to see how to pass an OAuth2 token.
-
-### Using An External OAuth2 Token
-
-If you've used the 3rd method to create a client (i.e. [3. Using a ProjectId](#3-using-a-projectid)), then all the method you use require an explicit OAuth2 token:
-
-```js
-storage.list({ token }).then(console.log)
-```
-
-All method accept a last optional argument object.
-
 
 ## Extra Precautions To Make Robust Queries
 ### Avoiding Network Errors
@@ -401,6 +393,193 @@ storage.insert(someObject, 'your-bucket/a-path/filename.json', { timeout: 30000 
 // Retry timeout for QUERIES
 storage.get('your-bucket/a-path/filename.json', { timeout: 30000 }) // 30 seconds retry period timeout
 ```
+
+## Using An External OAuth2 Token
+
+If you've used the 3rd method to create a client (i.e. [3. Using a ProjectId](#3-using-a-projectid)), then all the method you use require an explicit OAuth2 token:
+
+```js
+storage.list({ token }).then(console.log)
+```
+
+All method accept a last optional argument object.
+
+# Full API Doc
+## Storage API
+
+### storage.get(filePath[, options]): <Promise<Object>>
+
+Gets an object located under the `filePath` path in a bucket.
+* `filePath` <String> 
+* `options` <Object>  
+
+### storage.list([options]) or storage.list(filePath[, options]): <Promise<Array<Object>>>
+
+Lists buckets for this project or objects under a specific `filePath`.
+* `filePath` <String> 
+* `options` <Object>  
+
+### storage.insert(object, filePath[, options])
+
+Inserts a new object located at `filePath`.
+* `object` <Object> 
+* `filePath` <String> 
+* `options` <Object>  
+
+### storage.exists(filePath[, options]): <Promise<Boolean>>
+
+Checks whether an object located under the `filePath` path exists or not.
+* `filePath` <String> 
+* `options` <Object>  
+
+### storage.addPublicAccess(filePath[, options]): <Promise<Object>>
+
+Grants public access to a file located under the `filePath` path.
+* `filePath` <String> 
+* `options` <Object>  
+
+### storage.removePublicAccess(filePath[, options]): <Promise<Object>>
+
+Removes public access from a file located under the `filePath` path.
+* `filePath` <String> 
+* `options` <Object>  
+
+### storage.bucket(bucketId): <Bucket>
+
+Gets a bucket object. This object exposes a series of APIs described under the [bucket API](#bucket-api) section below.
+* `bucketId` <String> 
+
+## Bucket API
+
+### bucket.name: <String>
+
+Gets the bucket's name
+
+### bucket.get([options]): <Promise<Object>>
+
+Gets a bucket's metadata object.
+* `options` <Object>  
+
+### bucket.exists([options]): <Promise<Boolean>>
+
+Checks if a bucket exists.
+* `options` <Object>  
+
+### bucket.create([options]): <Promise<Object>>
+
+Creates a new bucket.
+* `options` <Object>  
+
+### bucket.delete([options]): <Promise<Object>>
+
+Deletes a bucket.
+* `options` <Object>  
+
+### bucket.update(config,[options]): <Promise<Object>>
+
+Updates a bucket.
+* `config` <Object> 
+* `options` <Object> 
+
+### bucket.addPublicAccess([options]): <Promise<Object>>
+
+Grants public access to a bucket as well as all its files.
+* `options` <Object>  
+
+### bucket.removePublicAccess([options]): <Promise<Object>>
+
+Removes public access from a bucket as well as all its files.
+* `options` <Object>  
+
+### bucket.isPublic([options]): <Promise<Boolean>>
+
+Checks if a bucket is public or not.
+* `options` <Object> 
+
+### bucket.zip([options]): <Promise<Object>>
+
+Zips bucket.
+* `options` <Object> 
+
+### bucket.cors.exists(corsConfig, [options]): <Promise<Boolean>>
+
+Checks if a bucket has been configured with specific CORS setup.
+* `corsConfig` <Object> 
+* `options` <Object> 
+
+### bucket.cors.setup(corsConfig, [options]): <Promise<Object>>
+
+Configures a bucket with a specific CORS setup.
+* `corsConfig` <Object> 
+* `options` <Object> 
+
+### bucket.cors.disable([options]): <Promise<Object>>
+
+Removes any CORS setup from a bucket.
+* `options` <Object> 
+
+### bucket.website.setup(webConfig, [options]): <Promise<Object>>
+
+Configures a bucket with a specific website setup.
+
+> NOTE: This API does not change the bucket access state. You should make this bucket public first using the `bucket.addPublicAccess` API described above.
+
+* `webConfig` <Object> 
+	- `mainPageSuffix` <String> This is the file that would be served by default when the website's pathname does not specify any explicit file name (e.g., use `index.html` so that https://your-domain.com is equivalent to http://your-domain.com/index.html).
+	- `notFoundPage` <String> This is the page that would be served if your user enter a URL that does not match any file (e.g., `404.html`).
+* `options` <Object> 
+
+### bucket.object(filePath): <BucketObject>
+
+Gets a bucket's object reference.
+* `filePath` <String>  
+
+## BucketObject API
+
+### bucketObject.file: <String>
+
+Gets bucketObject file name.
+
+### bucketObject.get([options]): <Promise<<Object>>
+
+Gets the bucket object.
+* `options` <Object> 
+
+### bucketObject.list([options]): <Promise<<Array<Object>>>
+
+Lists all the objects located under the bucket object (if that bucket object is a folder).
+* `options` <Object> 
+
+### bucketObject.exists([options]): <Promise<Boolean>>
+
+Checks if a bucket object exists or not.
+* `options` <Object> 
+
+### bucketObject.insert(object[, options]): <Promise<Object>>
+
+Inserts a bucket object. Also used to update. 
+* `options` <Object> 
+
+### bucketObject.delete([options]): <Promise<Object>>
+
+Deletes a bucket object.
+* `options` <Object> 
+
+### bucketObject.zip([options]): <Promise<Object>>
+
+Lists all the objects located under the bucket object (if that bucket object is a folder). 
+* `options` <Object> 
+
+### bucketObject.addPublicAccess([options]): <Promise<Object>>
+
+Grants public access to a bucket object.
+* `options` <Object> 
+
+### bucketObject.removePublicAccess([options]): <Promise<Object>>
+
+Removes public access from
+ a bucket object.
+* `options` <Object> 
 
 # Annex
 ## List Of All Google Cloud Platform Locations

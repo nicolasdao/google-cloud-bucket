@@ -144,6 +144,9 @@ const createClient = (config) => {
 	const getObject = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
 		.then(res => res && res.status == 404 ? { data:null } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data)
+	const deleteObject = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.delete(bucket, filePath, token, options), options))
+		.then(res => res && res.status == 404 ? { data:null } : _throwHttpErrorIfBadStatus(res))
+		.then(({ data }) => data)
 	const listObjects = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token), options)
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data))
@@ -171,7 +174,7 @@ const createClient = (config) => {
 		return gcp.removePublicAccess(bucket, file, token)
 	}).then(({ data }) => data)
 
-	const retryPutObject = (object, filePath, options={}) => putObject(object, filePath, options)
+	const insertObject = (object, filePath, options={}) => putObject(object, filePath, options)
 		.then(data => {
 			if (data)
 				data.publicUri = `https://storage.googleapis.com/${(filePath || '').replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`
@@ -184,7 +187,7 @@ const createClient = (config) => {
 			return data
 		})
 
-	const retryGetObject = (filePath, options={}) => Promise.resolve(null).then(() => {
+	const getObjectV2 = (filePath, options={}) => Promise.resolve(null).then(() => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
 		return getObject(bucket, file, options)
 	})
@@ -253,7 +256,7 @@ const createClient = (config) => {
 						}
 					})
 					const objName = obj.name ? `${obj.bucket}/${obj.name}` : obj.bucket
-					return retryGetObject(objName, { streamReader, timeout: 55 * 60 * 1000 }).then(() => {
+					return getObjectV2(objName, { streamReader, timeout: 55 * 60 * 1000 }).then(() => {
 						const b = Buffer.concat(chunks)
 						onFileReceived({ file: obj.name, size: b.length })
 						archive.append(b, { name: obj.name })
@@ -274,7 +277,7 @@ const createClient = (config) => {
 						if (to.bucket) {
 							const toBucket = to.bucket.name || bucket
 							const toPath = to.bucket.path || 'archive.zip'
-							tasks.push(retryPutObject(b, posix.join(toBucket, toPath), options))
+							tasks.push(insertObject(b, posix.join(toBucket, toPath), options))
 						} 
 
 						return Promise.all(tasks).then(() => ({ count: objects.length, data: null }))
@@ -295,14 +298,7 @@ const createClient = (config) => {
 		})
 
 	return {
-		insert: retryPutObject,
-		'get': retryGetObject,
-		addPublicAccess,
-		removePublicAccess,
-		zip: (filePath, options) => {
-			const { bucket, file } = _getBucketAndPathname(filePath)
-			return zipFiles(bucket, file, options)
-		},
+		'get': getObjectV2,
 		list: (filepath, options={}) => Promise.resolve(null).then(() => {
 			if (typeof(filepath) == 'object') {
 				options = filepath
@@ -315,6 +311,7 @@ const createClient = (config) => {
 			const { bucket, file } = _getBucketAndPathname(filepath, { ignoreMissingFile: true })
 			return listObjects(bucket, file, options)
 		}),
+		insert: insertObject,
 		exists: (filepath, options={}) => Promise.resolve(null).then(() => {
 			if(!filepath)
 				throw new Error('Missing required \'filepath\' argument')
@@ -322,6 +319,12 @@ const createClient = (config) => {
 			const { bucket, file } = _getBucketAndPathname(filepath, { ignoreMissingFile: true })
 			return objectExists(bucket, file, options)
 		}),
+		addPublicAccess,
+		removePublicAccess,
+		zip: (filePath, options) => {
+			const { bucket, file } = _getBucketAndPathname(filePath)
+			return zipFiles(bucket, file, options)
+		},
 		config: (bucket) => {
 			if(!bucket)
 				throw new Error('Missing required \'bucket\' argument')
@@ -357,17 +360,19 @@ const createClient = (config) => {
 					// }
 					setup: (webConfig, options={}) => setupWebsite(bucketName, webConfig, options)
 				},
+				zip: (options={}) => zipFiles(bucketName, '/', options),
 				object: (filePath) => {
 					if (!filePath)
 						throw new Error('Missing required \'filePath\' argument')
 
 					return {
 						file: filePath,
-						zip: (options={}) => zipFiles(bucketName, filePath, options),
-						exists: (options={}) => objectExists(bucketName, filePath, options),
+						'get': (options={}) => getObjectV2(posix.join(bucketName, filePath), options),
+						delete: (options={}) => deleteObject(bucketName, filePath, options),
 						list: (options={}) => listObjects(bucketName, filePath, options),
-						'get': (options={}) => retryGetObject(posix.join(bucketName, filePath), options),
-						insert: (object, options={}) => retryPutObject(object, posix.join(bucketName, filePath), options),
+						exists: (options={}) => objectExists(bucketName, filePath, options),
+						insert: (object, options={}) => insertObject(object, posix.join(bucketName, filePath), options),
+						zip: (options={}) => zipFiles(bucketName, filePath, options),
 						addPublicAccess: (options={}) => addPublicAccess(posix.join(bucketName, filePath), options),
 						removePublicAccess: (options={}) => removePublicAccess(posix.join(bucketName, filePath), options)
 					}

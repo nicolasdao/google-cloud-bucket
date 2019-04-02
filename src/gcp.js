@@ -76,6 +76,25 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/'), options), headers, body: payload })
 })
 
+const deleteObject = (bucketId, filepath, token) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ bucketId, filepath, token })
+
+	filepath = filepath.replace(/^\//, '')
+
+	const { contentType } = urlHelper.getInfo(`https://neap.co/${filepath}`)
+
+	return fetch.delete({ 
+		uri: BUCKET_FILE_URL(bucketId, filepath), 
+		headers: {
+			Accept: contentType || 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	}).then(res => {
+		console.log(res)
+		return res 
+	})
+})
+
 /**
  * Lists all buckets for project ID
  * 
@@ -455,6 +474,7 @@ const setupWebsite = (bucket, webConfig={}, token) => Promise.resolve(null).then
 module.exports = {
 	insert: putObject,
 	'get': getBucketFile,
+	delete: deleteObject,
 	addPublicAccess: makePublic,
 	removePublicAccess: makePrivate,
 	doesFileExist,
