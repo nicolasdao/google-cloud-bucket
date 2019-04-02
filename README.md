@@ -406,14 +406,13 @@ All method accept a last optional argument object.
 
 # Full API Doc
 ## Storage API
-
-### storage.get(filePath[, options]): Promise<Object>
+### storage.get(filePath[, options]): `<Promise<Object>>`
 
 Gets an object located under the `filePath` path in a bucket.
 * `filePath` <String> 
 * `options` <Object>  
 
-### storage.list([options]) or storage.list(filePath[, options]): Promise<Array<Object>>
+### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<Object>>>`
 
 Lists buckets for this project or objects under a specific `filePath`.
 * `filePath` <String> 
