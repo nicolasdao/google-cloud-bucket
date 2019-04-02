@@ -409,27 +409,27 @@ All method accept a last optional argument object.
 ### storage.get(filePath[, options]): `<Promise<Object>>`
 
 Gets an object located under the `filePath` path in a bucket.
-* `filePath` <String> 
-* `options` <Object>  
+* `filePath` `<String>`
+* `options` `<Object>`  
 
 ### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<Object>>>`
 
 Lists buckets for this project or objects under a specific `filePath`.
-* `filePath` <String> 
-* `options` <Object>  
+* `filePath` `<String>` 
+* `options` `<Object>`  
 
-### storage.insert(object, filePath[, options])
+### storage.insert(object, filePath[, options]): `<Promise<Object>>`
 
 Inserts a new object located at `filePath`.
-* `object` <Object> 
-* `filePath` <String> 
-* `options` <Object>  
+* `object` `<Object>` 
+* `filePath` `<String>` 
+* `options` `<Object>`  
 
-### storage.exists(filePath[, options]): <Promise<Boolean>>
+### storage.exists(filePath[, options]): `<Promise<Boolean>>`
 
 Checks whether an object located under the `filePath` path exists or not.
-* `filePath` <String> 
-* `options` <Object>  
+* `filePath` `<String>` 
+* `options` `<Object>`  
 
 ### storage.addPublicAccess(filePath[, options]): <Promise<Object>>
 
