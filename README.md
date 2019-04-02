@@ -16,6 +16,7 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 >	- [Storage API](#storage-api)
 >	- [Bucket API](#bucket-api)
 >	- [BucketObject API](#bucketobject-api)
+>	- [Objects](#objects)
 > * [Annex](#annex) 
 >    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
 > * [About Neap](#this-is-what-we-re-up-to)
@@ -412,18 +413,30 @@ Gets an object located under the `filePath` path in a bucket.
 * `filePath` `<String>`
 * `options` `<Object>`  
 
-### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<Object>>>`
+### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<GoogleBucketBase|GoogleBucketObject>>>`
 
 Lists buckets for this project or objects under a specific `filePath`.
 * `filePath` `<String>` 
 * `options` `<Object>`  
+* Returns either
+	- An array of [GoogleBucketBase](#googlebucketbase) if no `filePath` is passed.
+	- An array of [GoogleBucketObject](#googlebucketobject) if a `filePath` is passed.
 
-### storage.insert(object, filePath[, options]): `<Promise<Object>>`
+### storage.insert(object, filePath[, options]): `<Promise<GoogleBucketObjectPlus>>`
 
-Inserts a new object located at `filePath`.
-* `object` `<Object>` 
-* `filePath` `<String>` 
-* `options` `<Object>`  
+Inserts a new object to `filePath`.
+* `object` `<Object>`Object you want to upload.
+* `filePath` `<String>`Storage's pathname destination where that object is uploaded, e.g., `your-bucket-id/media/css/style.css`.
+* `options` `<Object>` 
+* Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
+
+### storage.insertFile(localPath, filePath[, options]): `<Promise<GoogleBucketObjectPlus>>`
+
+Inserts a file located at `localPath` to `filePath`.
+* `localPath` `<String>`Absolute path on your local machine of the file you want to upload.
+* `filePath` `<String>` Storage's pathname destination where that object is uploaded, e.g., `your-bucket-id/media/css/style.css`.
+* `options` `<Object>` 
+* Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### storage.exists(filePath[, options]): `<Promise<Boolean>>`
 
@@ -431,154 +444,237 @@ Checks whether an object located under the `filePath` path exists or not.
 * `filePath` `<String>` 
 * `options` `<Object>`  
 
-### storage.addPublicAccess(filePath[, options]): <Promise<Object>>
+### storage.addPublicAccess(filePath[, options]): `<Promise<Object>>`
 
 Grants public access to a file located under the `filePath` path.
-* `filePath` <String> 
+* `filePath` `<String>` 
 * `options` <Object>  
 
-### storage.removePublicAccess(filePath[, options]): <Promise<Object>>
+### storage.removePublicAccess(filePath[, options]): `<Promise<Object>>`
 
 Removes public access from a file located under the `filePath` path.
-* `filePath` <String> 
-* `options` <Object>  
+* `filePath` `<String>` 
+* `options` `<Object>`  
 
-### storage.bucket(bucketId): <Bucket>
+### storage.bucket(bucketId): `<Bucket>`
 
 Gets a bucket object. This object exposes a series of APIs described under the [bucket API](#bucket-api) section below.
-* `bucketId` <String> 
+* `bucketId` `<String>` 
 
 ## Bucket API
 
-### bucket.name: <String>
+### bucket.name: `<String>`
 
 Gets the bucket's name
 
-### bucket.get([options]): <Promise<Object>>
+### bucket.get([options]): `<Promise<Object>>`
 
 Gets a bucket's metadata object.
-* `options` <Object>  
+* `options` `<Object>`  
 
-### bucket.exists([options]): <Promise<Boolean>>
+### bucket.exists([options]): `<Promise<Boolean>>`
 
 Checks if a bucket exists.
-* `options` <Object>  
+* `options` `<Object>`  
 
-### bucket.create([options]): <Promise<Object>>
+### bucket.create([options]): `<Promise<Object>>`
 
 Creates a new bucket.
-* `options` <Object>  
+* `options` `<Object>`  
 
-### bucket.delete([options]): <Promise<Object>>
+### bucket.delete([options]): `<Promise<Object>>`
 
 Deletes a bucket.
-* `options` <Object>  
+* `options` `<Object>`  
 
-### bucket.update(config,[options]): <Promise<Object>>
+### bucket.update(config,[options]): `<Promise<Object>>`
 
 Updates a bucket.
-* `config` <Object> 
-* `options` <Object> 
+* `config` `<Object>` 
+* `options` `<Object>` 
 
-### bucket.addPublicAccess([options]): <Promise<Object>>
+### bucket.addPublicAccess([options]): `<Promise<Object>>`
 
 Grants public access to a bucket as well as all its files.
-* `options` <Object>  
+* `options` `<Object>`  
 
-### bucket.removePublicAccess([options]): <Promise<Object>>
+### bucket.removePublicAccess([options]): `<Promise<Object>>`
 
 Removes public access from a bucket as well as all its files.
-* `options` <Object>  
+* `options` `<Object>`  
 
-### bucket.isPublic([options]): <Promise<Boolean>>
+### bucket.isPublic([options]): `<Promise<Boolean>>`
 
 Checks if a bucket is public or not.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucket.zip([options]): <Promise<Object>>
+### bucket.zip([options]): `<Promise<Object>>`
 
 Zips bucket.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucket.cors.exists(corsConfig, [options]): <Promise<Boolean>>
+### bucket.cors.exists(corsConfig, [options]): `<Promise<Boolean>>`
 
 Checks if a bucket has been configured with specific CORS setup.
-* `corsConfig` <Object> 
-* `options` <Object> 
+* `corsConfig` `<Object>` 
+* `options` `<Object>` 
 
-### bucket.cors.setup(corsConfig, [options]): <Promise<Object>>
+### bucket.cors.setup(corsConfig, [options]): `<Promise<Object>>`
 
 Configures a bucket with a specific CORS setup.
-* `corsConfig` <Object> 
-* `options` <Object> 
+* `corsConfig` `<Object>` 
+* `options` `<Object>` 
 
-### bucket.cors.disable([options]): <Promise<Object>>
+### bucket.cors.disable([options]): `<Promise<Object>>`
 
 Removes any CORS setup from a bucket.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucket.website.setup(webConfig, [options]): <Promise<Object>>
+### bucket.website.setup(webConfig, [options]): `<Promise<Object>>`
 
 Configures a bucket with a specific website setup.
 
 > NOTE: This API does not change the bucket access state. You should make this bucket public first using the `bucket.addPublicAccess` API described above.
 
-* `webConfig` <Object> 
-	- `mainPageSuffix` <String> This is the file that would be served by default when the website's pathname does not specify any explicit file name (e.g., use `index.html` so that https://your-domain.com is equivalent to http://your-domain.com/index.html).
-	- `notFoundPage` <String> This is the page that would be served if your user enter a URL that does not match any file (e.g., `404.html`).
-* `options` <Object> 
+* `webConfig` `<Object>` 
+	- `mainPageSuffix` `<String>` This is the file that would be served by default when the website's pathname does not specify any explicit file name (e.g., use `index.html` so that https://your-domain.com is equivalent to http://your-domain.com/index.html).
+	- `notFoundPage` `<String>` This is the page that would be served if your user enter a URL that does not match any file (e.g., `404.html`).
+* `options` `<Object>` 
 
-### bucket.object(filePath): <BucketObject>
+### bucket.object(filePath): `<BucketObject>`
 
 Gets a bucket's object reference.
-* `filePath` <String>  
+* `filePath` `<String>`  
 
 ## BucketObject API
 
-### bucketObject.file: <String>
+### bucketObject.file: `<String>`
 
 Gets bucketObject file name.
 
-### bucketObject.get([options]): <Promise<<Object>>
+### bucketObject.get([options]): `<Promise<<Object>>`
 
 Gets the bucket object.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucketObject.list([options]): <Promise<<Array<Object>>>
+### bucketObject.list([options]): `<Promise<<Array<Object>>>`
 
 Lists all the objects located under the bucket object (if that bucket object is a folder).
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucketObject.exists([options]): <Promise<Boolean>>
+### bucketObject.exists([options]): `<Promise<Boolean>>`
 
 Checks if a bucket object exists or not.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucketObject.insert(object[, options]): <Promise<Object>>
+### bucketObject.insert(object[, options]): `<Promise<GoogleBucketObjectPlus>>`
 
-Inserts a bucket object. Also used to update. 
-* `options` <Object> 
+Inserts a new object to that bucket object.
+* `object` `<Object>`Object you want to upload.
+* `options` `<Object>` 
+* Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
-### bucketObject.delete([options]): <Promise<Object>>
+### bucketObject.insertFile(localPath[, options]): `<Promise<GoogleBucketObjectPlus>>`
+
+Inserts a file located at `localPath` to that bucket object.
+* `localPath` `<String>`Absolute path on your local machine of the file you want to upload.
+* `options` `<Object>` 
+* Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
+
+### bucketObject.delete([options]): `<Promise<Object>>`
 
 Deletes a bucket object.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucketObject.zip([options]): <Promise<Object>>
+### bucketObject.zip([options]): `<Promise<Object>>`
 
 Lists all the objects located under the bucket object (if that bucket object is a folder). 
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucketObject.addPublicAccess([options]): <Promise<Object>>
+### bucketObject.addPublicAccess([options]): `<Promise<Object>>`
 
 Grants public access to a bucket object.
-* `options` <Object> 
+* `options` `<Object>` 
 
-### bucketObject.removePublicAccess([options]): <Promise<Object>>
+### bucketObject.removePublicAccess([options]): `<Promise<Object>>`
 
 Removes public access from
  a bucket object.
-* `options` <Object> 
+* `options` `<Object>` 
+
+## Objects
+### GoogleBucketBase
+
+* `kind` `<String>` Always set to 'storage#bucket'.
+* `id` `<String>`
+* `selfLink` `<String>`
+* `projectNumber` `<String>`
+* `name` `<String>` 
+* `timeCreated` `<String>` UTC date, e.g., '2019-01-18T05:57:24.213Z'.
+* `updated` `<String>` UTC date, e.g., '2019-01-18T05:57:32.548Z'.
+* `metageneration` `<String>` 
+* `iamConfiguration` `<String>` { bucketPolicyOnly: { enabled: false } },
+* `location` `<String>` Valid values are described in section [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations).
+* `website` `<[GoogleBucketWebsite](#googlebucketwebsite)>`
+* `cors` `<Array<``[GoogleBucketCORS](#googlebucketcors)``>>`
+* `storageClass` `<String>` 
+* `etag` `<String>`
+
+### GoogleBucketFull
+
+Same as [GoogleBucketBase](#googlebucketbase) with an extra property:
+
+* `iam` `<GoogleBucketIAM>`
+
+### GoogleBucketWebsite
+
+* `mainPageSuffix` `<String>` Defines which is the default file served when none is explicitly specified un a URI. For example, setting this property to 'index.html' means that this content could be reached using [https://your-domain.com](https://your-domain.com) instead of [https://your-domain.com/index.html](https://your-domain.com/index.html).
+* `notFoundPage` `<String>` E.g., '404.html'. This means that all not found page are redirected to this page.
+
+### GoogleBucketCORS
+
+* `origin` `<Array<String>>` 
+* `method` `<Array<String>>` 
+* `responseHeader` `<Array<String>>` 
+* `maxAgeSeconds` `<Number>` 
+
+### GoogleBucketIAM
+
+* `kind` `<String>` Always set to 'storage#policy',
+* `resourceId` `<String>` 
+* `bindings` `<Array<GoogleBucketBindings>>` 
+* `etag` `<String>` 
+
+### GoogleBucketBindings
+
+* `role` `<String>` E.g., 'roles/storage.objectViewer', ...
+* `members` `<Array<String>>` E.g., 'allUsers', 'projectEditor:your-project-id', 'projectOwner:your-project-id', ...
+
+### GoogleBucketObject 
+
+* `kind` `<String>` Always set to 'storage#object'.
+* `id` `<String>`
+* `selfLink` `<String>`
+* `name` `<String>` Pathname to the object inside the bucket, e.g., 'new/css/line-icons.min.css'.
+* `bucket` `<String>` Bucket's ID
+* `generation` `<String>` Date stamp in milliseconds from epoc.
+* `metageneration` `<String>`
+* `contentType` `<String>` e.g., 'text/css'.
+* `timeCreated` `<String>` UTC date, e.g., '2019-04-02T22:33:18.362Z'.
+* `updated` `<String>` UTC date, e.g., '2019-04-02T22:33:18.362Z'.
+* `storageClass` `<String>` Valid value are: 'STANDARD', 'MULTI-REGIONAL', 'NEARLINE', 'COLDLINE'.
+* `timeStorageClassUpdated` `<String>`  UTC date, e.g., '2019-04-02T22:33:18.362Z'.
+* `size` `<String>` Size in bytes, e.g., '5862'.
+* `md5Hash` `<String>`
+* `mediaLink` `<String>`
+* `crc32c` `<String>`
+* `etag` `<String>`
+
+### GoogleBucketObjectPlus 
+
+Same as [GoogleBucketObject](#googlebucketobject), but with the following extra property:
+
+* `publicUri` `<String>` If the object is publicly available, this URI indicates where it is located. This URI follows this structure: [https://storage.googleapis.com/your-bucket-id/your-file-path](https://storage.googleapis.com/your-bucket-id/your-file-path).
 
 # Annex
 ## List Of All Google Cloud Platform Locations

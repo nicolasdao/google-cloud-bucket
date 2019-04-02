@@ -87,6 +87,22 @@ const _saveFile = ({ to, buffer }) => new Promise((onSuccess, onFailure) => {
 	}
 })
 
+const _readFile = filePath => new Promise((onSuccess, onFailure) => {
+	try {
+		if (!filePath) {
+			const e = new Error('Missing required \'filePath\' argument')
+			onFailure(e)
+		}
+		fs.readFile(filePath, (err, buffer) => {
+			if (err) 
+				onFailure(err)
+			onSuccess(buffer)
+		})
+	} catch(err) {
+		onFailure(err)
+	}
+})
+
 /**
  * [description]
  * @param  {String} config.jsonKeyFile 	Path to the service-account.json file. If specified, 'clientEmail', 'privateKey', 'projectId' are not required.
@@ -186,6 +202,8 @@ const createClient = (config) => {
 				})
 			return data
 		})
+
+	const insertFile = (localPath, filePath, options={}) => _readFile(localPath).then(buffer => insertObject(buffer, filePath, options))
 
 	const getObjectV2 = (filePath, options={}) => Promise.resolve(null).then(() => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
@@ -312,6 +330,7 @@ const createClient = (config) => {
 			return listObjects(bucket, file, options)
 		}),
 		insert: insertObject,
+		insertFile,
 		exists: (filepath, options={}) => Promise.resolve(null).then(() => {
 			if(!filepath)
 				throw new Error('Missing required \'filepath\' argument')
@@ -372,6 +391,7 @@ const createClient = (config) => {
 						list: (options={}) => listObjects(bucketName, filePath, options),
 						exists: (options={}) => objectExists(bucketName, filePath, options),
 						insert: (object, options={}) => insertObject(object, posix.join(bucketName, filePath), options),
+						insertFile: (localPath, options={}) => insertFile(localPath, posix.join(bucketName, filePath), options),
 						zip: (options={}) => zipFiles(bucketName, filePath, options),
 						addPublicAccess: (options={}) => addPublicAccess(posix.join(bucketName, filePath), options),
 						removePublicAccess: (options={}) => removePublicAccess(posix.join(bucketName, filePath), options)
