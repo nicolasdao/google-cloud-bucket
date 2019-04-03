@@ -407,13 +407,14 @@ All method accept a last optional argument object.
 
 # Full API Doc
 ## Storage API
-### storage.get(filePath[, options]): `<Promise<Object>>`
+### storage.get(filePath[, options]): `<Promise<`[`GoogleBucketObject`](#googlebucketobject)`>>`
 
-Gets an object located under the `filePath` path in a bucket.
+Gets an object located under the bucket's `filePath` path.
 * `filePath` `<String>`
 * `options` `<Object>`  
+* Returns a [GoogleBucketObject](#googlebucketobject) object.
 
-### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<GoogleBucketBase|GoogleBucketObject>>>`
+### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<`[`GoogleBucketBase`](#googlebucketbase)|[`GoogleBucketObject`](#googlebucketobject)`>>>`
 
 Lists buckets for this project or objects under a specific `filePath`.
 * `filePath` `<String>` 
@@ -422,7 +423,7 @@ Lists buckets for this project or objects under a specific `filePath`.
 	- An array of [GoogleBucketBase](#googlebucketbase) if no `filePath` is passed.
 	- An array of [GoogleBucketObject](#googlebucketobject) if a `filePath` is passed.
 
-### storage.insert(object, filePath[, options]): `<Promise<GoogleBucketObjectPlus>>`
+### storage.insert(object, filePath[, options]): `<Promise<`[`GoogleBucketObjectPlus`](#googlebucketobjectplus)`>>`
 
 Inserts a new object to `filePath`.
 * `object` `<Object>`Object you want to upload.
@@ -430,7 +431,7 @@ Inserts a new object to `filePath`.
 * `options` `<Object>` 
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
-### storage.insertFile(localPath, filePath[, options]): `<Promise<GoogleBucketObjectPlus>>`
+### storage.insertFile(localPath, filePath[, options]): `<Promise<`[`GoogleBucketObjectPlus`](#googlebucketobjectplus)`>>`
 
 Inserts a file located at `localPath` to `filePath`.
 * `localPath` `<String>`Absolute path on your local machine of the file you want to upload.
@@ -481,6 +482,7 @@ Checks if a bucket exists.
 
 Creates a new bucket.
 * `options` `<Object>`  
+	- `location` `<String>` Default is `US`. The full list can be found in section [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations).
 
 ### bucket.delete([options]): `<Promise<Object>>`
 
@@ -615,8 +617,8 @@ Removes public access from
 * `metageneration` `<String>` 
 * `iamConfiguration` `<String>` { bucketPolicyOnly: { enabled: false } },
 * `location` `<String>` Valid values are described in section [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations).
-* `website` `<[GoogleBucketWebsite](#googlebucketwebsite)>`
-* `cors` `<Array<``[GoogleBucketCORS](#googlebucketcors)``>>`
+* `website` `<`[`GoogleBucketWebsite`](#googlebucketwebsite)`>`
+* `cors` `<Array<`[`GoogleBucketCORS`](#googlebucketcors)`>>`
 * `storageClass` `<String>` 
 * `etag` `<String>`
 
@@ -624,7 +626,7 @@ Removes public access from
 
 Same as [GoogleBucketBase](#googlebucketbase) with an extra property:
 
-* `iam` `<GoogleBucketIAM>`
+* `iam` `<`[`GoogleBucketIAM`](#GoogleBucketIAM)`>`
 
 ### GoogleBucketWebsite
 
@@ -642,7 +644,7 @@ Same as [GoogleBucketBase](#googlebucketbase) with an extra property:
 
 * `kind` `<String>` Always set to 'storage#policy',
 * `resourceId` `<String>` 
-* `bindings` `<Array<GoogleBucketBindings>>` 
+* `bindings` `<Array<`[`GoogleBucketBindings`](#googlebucketbindings)`>>` 
 * `etag` `<String>` 
 
 ### GoogleBucketBindings
