@@ -89,9 +89,6 @@ const deleteObject = (bucketId, filepath, token) => Promise.resolve(null).then((
 			Accept: contentType || 'application/json',
 			Authorization: `Bearer ${token}`
 		}
-	}).then(res => {
-		console.log(res)
-		return res 
 	})
 })
 
