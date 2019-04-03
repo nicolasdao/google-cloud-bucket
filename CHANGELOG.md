@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.12.3"></a>
+## [0.12.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.12.2...v0.12.3) (2019-04-03)
+
+
+### Bug Fixes
+
+* Console.log each time an object is being deleted ([b9ce0db](https://github.com/nicolasdao/google-cloud-bucket/commit/b9ce0db))
+
+
+
 <a name="0.12.2"></a>
 ## [0.12.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.12.1...v0.12.2) (2019-04-02)
 
