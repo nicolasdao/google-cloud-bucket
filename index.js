@@ -241,7 +241,7 @@ const createClient = (config) => {
 		if (l == 0)
 			return yield deleteBucket(bucket, options)
 
-		const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name)))
+		const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name, options)))
 		yield throttle(deleteTasks, 20)
 		return yield deleteBucket(bucket, options)
 	})
