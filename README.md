@@ -73,7 +73,7 @@ storage.bucket('your-globally-unique-bucket-name').create({ location: 'australia
 	.then(data => console.log(data))
 
 // DELETING A BUCKET
-storage.bucket('your-globally-unique-bucket-name').delete()
+storage.bucket('your-globally-unique-bucket-name').delete({ force:true })
 	.then(data => console.log(data))
 
 // GET A BUCKET'S SETUP DATA 
@@ -488,6 +488,7 @@ Creates a new bucket.
 
 Deletes a bucket.
 * `options` `<Object>`  
+	- `force` `<Boolean>` Default is false. When false, deleting a non-empty bucket throws a 409 error. When set to true, even a non-empty bucket is deleted. Behind the scene, the entire content is deleted first. That's why forcing a bucket deletion might take longer.
 
 ### bucket.update(config,[options]): `<Promise<Object>>`
 

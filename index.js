@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
 */
 
+const co = require('co')
+const { throttle } = require('core-async')
 const googleAuth = require('google-auto-auth')
 const archiver = require('archiver')
 const fs = require('fs')
@@ -174,7 +176,20 @@ const createClient = (config) => {
 	const getBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.config.get(bucket, token)).then(({ data }) => data))
 
 	const createBucket = (bucket, options={}) => _getToken(options.token).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ data }) => data)
-	const deleteBucket = (bucket, options={}) => _getToken(options.token).then(token => gcp.bucket.delete(bucket, token)).then(({ data }) => data)
+	const deleteBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.bucket.delete(bucket, token))).then(({ status, data }) => {
+		let d = data
+		if (data instanceof Buffer) {
+			const s = data.toString()
+			try {
+				d = JSON.parse(s)
+			} catch(e) {
+				d = (() => s)(e)
+			}
+		}
+		if (status > 299)
+			throw new Error(`Delete failed: ${JSON.stringify(d)}`)
+		return d
+	})
 	const isBucketPublic = (bucket, options={}) => _getToken(options.token).then(token => gcp.config.isBucketPublic(bucket, token))
 	const isCorsSetUp = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
 	const setupCors = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.setup(bucket, corsConfig, token)).then(({ data }) => data)
@@ -208,6 +223,27 @@ const createClient = (config) => {
 	const getObjectV2 = (filePath, options={}) => Promise.resolve(null).then(() => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
 		return getObject(bucket, file, options)
+	})
+
+	/**
+	 * Deletes a bucket, supporting forcing deletion of buckets with content.
+	 * @param  {String} bucket  		Bucket ID
+	 * @param  {Object} options.force 	Default false. If true, even bucket containing files are deleted. Otherwise, a 409 error is returned.
+	 * @return {[type]}         		[description]
+	 */
+	const deleteBucketPlus = (bucket, options) => co(function *(){
+		options = options || {}
+		if (!options.force)
+			return yield deleteBucket(bucket, options)
+
+		const files = (yield listObjects(bucket, '/', options)) || []
+		const l = files.length
+		if (l == 0)
+			return yield deleteBucket(bucket, options)
+
+		const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name)))
+		yield throttle(deleteTasks, 20)
+		return yield deleteBucket(bucket, options)
 	})
 
 	/**
@@ -362,7 +398,7 @@ const createClient = (config) => {
 				'get': (options={}) => getBucket(bucketName, options),
 				exists: (options={}) => objectExists(bucketName, null, options),
 				create: (options={}) => createBucket(bucketName, options),
-				delete: (options={}) => deleteBucket(bucketName, options),
+				delete: (options={}) => deleteBucketPlus(bucketName, options),
 				update: (config={}, options={}) => updateConfig(bucketName, config, options),
 				addPublicAccess: (options={}) => addPublicAccess(bucketName, options),
 				removePublicAccess: (options={}) => removePublicAccess(bucketName, options),
