@@ -464,6 +464,12 @@ Gets a bucket object. This object exposes a series of APIs described under the [
 
 ## Bucket API
 
+The `bucket` object is created using a code snippet similar to the following:
+
+```js
+const bucket = storage.bucket('your-bucket-id')
+```
+
 ### bucket.name: `<String>`
 
 Gets the bucket's name
@@ -546,10 +552,17 @@ Configures a bucket with a specific website setup.
 
 ### bucket.object(filePath): `<BucketObject>`
 
-Gets a bucket's object reference.
-* `filePath` `<String>`  
+Gets a bucket's object reference. This object exposes a series of APIs detailed in the next section [BucketObject API](#bucketobject-api).
+* `filePath` `<String>` This path represents a file or a folder.
 
 ## BucketObject API
+
+The `bucketObject` object is created using a code snippet similar to the following:
+
+```js
+const bucket = storage.bucket('your-bucket-id')
+const bucketObject = bucket.object('folder1/folder2/index.html')
+```
 
 ### bucketObject.file: `<String>`
 
@@ -586,8 +599,10 @@ Inserts a file located at `localPath` to that bucket object.
 
 ### bucketObject.delete([options]): `<Promise<Object>>`
 
-Deletes a bucket object.
+Deletes an object or an entire folder. 
 * `options` `<Object>` 
+
+> NOTE: To delete a folder, the argument used to create the `bucketObject` must be a folder (e.g., `storage.bucket('your-bucket-id').object('folderA/folderB').delete()`)
 
 ### bucketObject.zip([options]): `<Promise<Object>>`
 

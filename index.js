@@ -12,7 +12,7 @@ const googleAuth = require('google-auto-auth')
 const archiver = require('archiver')
 const fs = require('fs')
 const { toBuffer } = require('convert-stream')
-const { posix } = require('path')
+const { posix, extname } = require('path')
 const { Writable } = require('stream')
 const { promise: { retry }, collection } = require('./src/utils')
 const gcp = require('./src/gcp')
@@ -226,6 +226,28 @@ const createClient = (config) => {
 	})
 
 	/**
+	 * Augments the 'deleteObject' function with the ability to delete all files under a path. 
+	 * 
+	 * @param  {String} bucket  		Bucket ID
+	 * @param  {String} filePath  		Path under that 'bucket'
+	 * @yield {Void} 
+	 */
+	const deleteObjectPlus = (bucket, filePath, options={}) => co(function *(){
+		if (!filePath || !bucket || extname(filePath)) {
+			yield deleteObject(bucket, filePath, options)
+			return { count:1 }
+		}
+		
+		const files = yield listObjects(bucket, filePath, options)
+		const count = files ? files.length : 0
+		if (count > 0) {
+			const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name, options)))
+			yield throttle(deleteTasks, 20)
+		}
+		return { count }
+	})
+
+	/**
 	 * Deletes a bucket, supporting forcing deletion of buckets with content.
 	 * @param  {String} bucket  		Bucket ID
 	 * @param  {Object} options.force 	Default false. If true, even bucket containing files are deleted. Otherwise, a 409 error is returned.
@@ -423,7 +445,7 @@ const createClient = (config) => {
 					return {
 						file: filePath,
 						'get': (options={}) => getObjectV2(posix.join(bucketName, filePath), options),
-						delete: (options={}) => deleteObject(bucketName, filePath, options),
+						delete: (options={}) => deleteObjectPlus(bucketName, filePath, options),
 						list: (options={}) => listObjects(bucketName, filePath, options),
 						exists: (options={}) => objectExists(bucketName, filePath, options),
 						insert: (object, options={}) => insertObject(object, posix.join(bucketName, filePath), options),
