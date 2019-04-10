@@ -580,6 +580,8 @@ Gets the bucket object.
 
 Lists all the objects located under the bucket object (if that bucket object is a folder).
 * `options` `<Object>` 
+	- `pattern` `<String|[String]>` Filters results using a glob pattern or an array of globbing patterns (e.g., `'**/*.png'` to only get png images).
+	- `ignore` `<String|[String]>` Filters results using a glob pattern or an array of globbing patterns to ignore some files or folders (e.g., `'**/*.png'` to return everything except png images).
 
 ### bucketObject.exists([options]): `<Promise<Boolean>>`
 

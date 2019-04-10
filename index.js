@@ -14,6 +14,7 @@ const fs = require('fs')
 const { toBuffer } = require('convert-stream')
 const { posix, extname } = require('path')
 const { Writable } = require('stream')
+const anymatch = require('anymatch')
 const { promise: { retry }, collection } = require('./src/utils')
 const gcp = require('./src/gcp')
 
@@ -106,6 +107,36 @@ const _readFile = filePath => new Promise((onSuccess, onFailure) => {
 })
 
 /**
+ * Filters list of bucket objects using globbing patterns. 
+ * 
+ * @param  {[BucketObject]}  data    			Array of bucket objects.
+ * @param  {String|[String]} options.pattern 	Glob string pattern or array of glob string patterns used to match the 'data[].name'
+ * @param  {String|[String]} options.ignore 	Glob string pattern or array of glob string patterns used to ignore a 'data[].name'
+ * @return {[BucketObject]}  output 			'data' but filtered
+ */
+const _filterBucketObjects = (data, options) => {
+	if (!data || data.length == 0)
+		return data 
+	
+	const { pattern, ignore } = options || {}
+	if (!pattern && !ignore)
+		return data 
+
+	return data.filter(o => {
+		if (!o.name)
+			return false 
+
+		const patternMatches = pattern ? anymatch(pattern,o.name) : true
+		const ignoreMatches =  ignore ? anymatch(ignore,o.name) : false
+
+		if (ignoreMatches)
+			return false
+
+		return patternMatches
+	})
+}
+
+/**
  * [description]
  * @param  {String} config.jsonKeyFile 	Path to the service-account.json file. If specified, 'clientEmail', 'privateKey', 'projectId' are not required.
  * @param  {String} config.clientEmail 	Email used in the service-account.json. If specified, 'jsonKeyFile' is not required, but 'privateKey', 'projectId' are.
@@ -167,7 +198,7 @@ const createClient = (config) => {
 		.then(({ data }) => data)
 	const listObjects = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token), options)
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
-		.then(({ data }) => data))
+		.then(({ data }) => _filterBucketObjects(data, options)))
 	const listBuckets = (options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.bucket.list(projectId, token, options), options)
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data))
