@@ -255,17 +255,19 @@ const createClient = (config) => {
 	 */
 	const deleteBucketPlus = (bucket, options) => co(function *(){
 		options = options || {}
-		if (!options.force)
-			return yield deleteBucket(bucket, options)
+		if (!options.force) {
+			const res = yield deleteBucket(bucket, options)
+			return { count:0, data:res }
+		}
 
 		const files = (yield listObjects(bucket, '/', options)) || []
-		const l = files.length
-		if (l == 0)
-			return yield deleteBucket(bucket, options)
-
-		const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name, options)))
-		yield throttle(deleteTasks, 20)
-		return yield deleteBucket(bucket, options)
+		const count = files.length
+		if (count > 0) {
+			const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name, options)))
+			yield throttle(deleteTasks, 20)
+		}
+		const data = yield deleteBucket(bucket, options)
+		return { count, data }
 	})
 
 	/**

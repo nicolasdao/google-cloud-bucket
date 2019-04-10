@@ -495,6 +495,9 @@ Creates a new bucket.
 Deletes a bucket.
 * `options` `<Object>`  
 	- `force` `<Boolean>` Default is false. When false, deleting a non-empty bucket throws a 409 error. When set to true, even a non-empty bucket is deleted. Behind the scene, the entire content is deleted first. That's why forcing a bucket deletion might take longer.
+* Returns an object:
+	- `count` `<Number>` The number of files deleted. This count number does not include the bucket itself (e.g., `0` means that the bucket was empty and was deleted successfully).
+	- `data` `<Object>` Extra information about the deleted bucket. 
 
 ### bucket.update(config,[options]): `<Promise<Object>>`
 
@@ -601,6 +604,8 @@ Inserts a file located at `localPath` to that bucket object.
 
 Deletes an object or an entire folder. 
 * `options` `<Object>` 
+* Returns an object:
+	- `count` `<Number>` The number of files deleted.
 
 > NOTE: To delete a folder, the argument used to create the `bucketObject` must be a folder (e.g., `storage.bucket('your-bucket-id').object('folderA/folderB').delete()`)
 
