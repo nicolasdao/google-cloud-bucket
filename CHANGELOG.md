@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.13.0"></a>
+# [0.13.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.12.5...v0.13.0) (2019-04-10)
+
+
+### Features
+
+* Add support to delete a folder under a bucket ([0a32e6e](https://github.com/nicolasdao/google-cloud-bucket/commit/0a32e6e))
+
+
+
 <a name="0.12.5"></a>
 ## [0.12.5](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.12.4...v0.12.5) (2019-04-04)
 
