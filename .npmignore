@@ -1,2 +1,6 @@
+*.DS_Store
+*.orig
 test/
 samples/
+NOTES.md
+CHANGELOG.md
