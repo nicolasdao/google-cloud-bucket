@@ -493,9 +493,44 @@ const createClient = (config) => {
 	}
 }
 
+/**
+ * Validate a bucket's name
+ * @param  {String}  name 			Bucket's name.
+ * @return {Boolean} output.valid
+ * @return {String}  output.reason  Reason for failure.
+ */
+const validateBucketName = name => {
+	if (!name || typeof(name) != 'string')
+		return { valid:false, reason:'The bucket name is required.' }
+	if (name.length < 3)
+		return { valid:false, reason:'The bucket name contain more than 2 characters.' }
+	if (!/^[a-z0-9].*[a-z0-9]$/.test(name))
+		return { valid:false, reason:'The bucket name must start and end with a number or letter.' }
+	if (/[^a-z0-9-_.]/.test(name))
+		return { valid:false, reason:'The bucket name must contain only lowercase letters, numbers, dashes (-), underscores (_), and dots (.).' }
+	if (/^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$/.test(name))
+		return { valid:false, reason:'The bucket name cannot be represented as an IP address in dotted-decimal notation (for example, 192.168.5.4).' }
+	if (name.indexOf('goog') == 0 || name.indexOf('g00g') == 0)
+		return { valid:false, reason:'The bucket name cannot begin with the "goog" prefix or contain close misspellings, such as "g00gle".' }
+	if (name.indexOf('.') > 0) {
+		if (name.length > 222)
+			return { valid:false, reason:'Bucket names containing dots cannot exceed 222 characters.' }
+		if (name.split('.').some(c => c.length > 63))
+			return { valid:false, reason:'Bucket names containing dots cannot have dot-separated components longer than 63 characters.' }
+	} else if (name.length > 63)
+		return { valid:false, reason:'Bucket names cannot be longer than 63 characters.' }
+
+	return { valid:true, reason:null }
+}
+
 module.exports = {
 	client: {
 		new: createClient
+	},
+	utils: {
+		validate:{
+			bucketName: validateBucketName
+		}
 	}
 }
 

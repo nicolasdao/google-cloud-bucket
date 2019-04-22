@@ -18,11 +18,11 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 >	- [Bucket API](#bucket-api)
 >	- [BucketObject API](#bucketobject-api)
 >	- [Objects](#objects)
-> * [Annex](#annex) 
->    * [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
+> * [Annexes](#annexes) 
+>	- [Bucket Name Restrictions](#bucket-name-restrictions)
+>	- [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations) 
 > * [About Neap](#this-is-what-we-re-up-to)
 > * [License](#license)
-
 
 # Install
 ```
@@ -501,6 +501,18 @@ Creates a new bucket.
 * `options` `<Object>`  
 	- `location` `<String>` Default is `US`. The full list can be found in section [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations).
 
+> WARNING: A bucket's name must follow clear guidelines (more details in the [Annexes](#annexes) under the [Bucket Name Restrictions](#bucket-name-restrictions) section). To facilitate the buckets name validation, a mathod called `validate.bucketName` is provided:
+>	```js
+>	const { utils:{ validate } } = require('google-cloud-bucket')
+>	const validate.bucketName('hello') 	// => { valid:true, reason:null }
+>	validate.bucketName('hello.com') 	// => { valid:true, reason:null }
+>	validate.bucketName('he_llo-23') 	// => { valid:true, reason:null }
+>	validate.bucketName('_hello') 		// => { valid:false, reason:'The bucket name must start and end with a number or letter.' }
+>	validate.bucketName('hEllo') 		// => { valid:false, reason:'The bucket name must contain only lowercase letters, numbers, dashes (-), underscores (_), and dots (.).' }
+>	validate.bucketName('192.168.5.4') 	// => { valid:false, reason:'The bucket name cannot be represented as an IP address in dotted-decimal notation (for example, 192.168.5.4).' }
+>	validate.bucketName('googletest') 	// => { valid:false, reason:'The bucket name cannot begin with the "goog" prefix or contain close misspellings, such as "g00gle".' }
+>	```
+
 ### bucket.delete([options]): `<Promise<Object>>`
 
 Deletes a bucket.
@@ -713,7 +725,31 @@ Same as [GoogleBucketObject](#googlebucketobject), but with the following extra 
 
 * `publicUri` `<String>` If the object is publicly available, this URI indicates where it is located. This URI follows this structure: [https://storage.googleapis.com/your-bucket-id/your-file-path](https://storage.googleapis.com/your-bucket-id/your-file-path).
 
-# Annex
+# Annexes
+## Bucket Name Restrictions
+
+Follow those rules to choose a bucket's name (those rules were extracted from the [official Google Cloud Storage documentation](https://cloud.google.com/storage/docs/naming)): 
+
+- Bucket names must contain only lowercase letters, numbers, dashes (-), underscores (\_), and dots (.). Names containing dots require verification.
+- Bucket names must start and end with a number or letter.
+- Bucket names must contain 3 to 63 characters. Names containing dots can contain up to 222 characters, but each dot-separated component can be no longer than 63 characters.
+- Bucket names cannot be represented as an IP address in dotted-decimal notation (for example, 192.168.5.4).
+- Bucket names cannot begin with the "goog" prefix.
+- Bucket names cannot contain "google" or close misspellings, such as "g00gle".
+
+To help validate if a name follows those rules, this package provides a utility method called `validate.bucketName`:
+
+```js
+const { utils:{ validate } } = require('google-cloud-bucket')
+const validate.bucketName('hello') 	// => { valid:true, reason:null }
+validate.bucketName('hello.com') 	// => { valid:true, reason:null }
+validate.bucketName('he_llo-23') 	// => { valid:true, reason:null }
+validate.bucketName('_hello') 		// => { valid:false, reason:'The bucket name must start and end with a number or letter.' }
+validate.bucketName('hEllo') 		// => { valid:false, reason:'The bucket name must contain only lowercase letters, numbers, dashes (-), underscores (_), and dots (.).' }
+validate.bucketName('192.168.5.4') 	// => { valid:false, reason:'The bucket name cannot be represented as an IP address in dotted-decimal notation (for example, 192.168.5.4).' }
+validate.bucketName('googletest') 	// => { valid:false, reason:'The bucket name cannot begin with the "goog" prefix or contain close misspellings, such as "g00gle".' }
+```
+
 ## List Of All Google Cloud Platform Locations
 ### Single Regions
 
