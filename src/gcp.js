@@ -221,9 +221,34 @@ const doesFileExist = (bucket, filepath, token) => Promise.resolve(null).then(()
 	})
 })
 
+/**
+ * Gets a bucket's files metadata
+ * 
+ * @param  {String}   bucket   
+ * @param  {String}   filepath 				Folder's path relative to the bucket
+ * @param  {String}   token    				OAuth2 token
+ * @param  {Number}   options.maxResults   	Default is 1000. 
+ * @param  {Number}   options.pageToken   	Used to access the next page. Use the 'nextPageToken' property returned by the previous page.
+ * @param  {[String]} options.fields   	  	Limits the number of fields returned to increase performances. Valid values are:
+ * 
+ *                                         	'kind','id','selfLink','name','bucket','generation','metageneration','contentType',
+ *                                         	'timeCreated','updated','storageClass','timeStorageClassUpdated','size','md5Hash',
+ *                                         	'mediaLink','crc32c','etag'
+ * @return {Number}   output.status       	
+ * @return {[Object]} output.data    		Array of bucket's metadata   	
+ */
 const filterFiles = (bucket, filepath, token, options={}) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ bucket, token })
-	const queryUrl = `${BUCKET_FILE_URL(bucket)}${filepath ? `?maxResults=1000${options.pageToken ? `&pageToken=${encodeURIComponent(options.pageToken)}` : ''}&prefix=${filepath.replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}` : ''}`
+	const queries = [`maxResults=${options.maxResults || 1000}`]
+	if (options.pageToken)
+		queries.push(`pageToken=${encodeURIComponent(options.pageToken)}`)
+	if (filepath)
+		queries.push(`prefix=${filepath.replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`)
+	if (options.fields && Array.isArray(options.fields) && options.fields.length)
+		queries.push(`fields=nextPageToken,items(${options.fields})`)
+	
+	const queryUrl = `${BUCKET_FILE_URL(bucket)}?${queries.join('&')}`
+
 	return fetch.get({ 
 		uri: queryUrl, 
 		headers: {

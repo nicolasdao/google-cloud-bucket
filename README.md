@@ -12,6 +12,7 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 >	- [3 Ways To Create a Client](#3-ways-to-create-a-client)
 >	- [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 >	- [Using An External OAuth2 Token](#using-an-external-oauth2-token)
+>	- [Performance Tips](#performance-tips)
 > * [Full API Doc](#full-api-doc)
 >	- [Storage API](#storage-api)
 >	- [Bucket API](#bucket-api)
@@ -405,6 +406,16 @@ storage.list({ token }).then(console.log)
 
 All method accept a last optional argument object.
 
+## Performance Tips
+
+The Google Cloud Storage API supports [partial response](https://cloud.google.com/storage/docs/json_api/v1/how-tos/performance#partial-response). This allows to only return specific fields rather than all of them, which can improve performances if you're querying a lot of objects. The only method that currently supports partial response is the the `list` API.
+
+```js
+storage.bucket('your-bucket').object('a-folder/').list({ fields:['name'] })
+```
+
+The above example only returns the `name` field. The full list of supported fields is detailed under [bucketObject.list([options])](#bucketobjectlistoptions-promisearrayobject) section. 
+
 # Full API Doc
 ## Storage API
 ### storage.get(filePath[, options]): `<Promise<`[`GoogleBucketObject`](#googlebucketobject)`>>`
@@ -580,8 +591,9 @@ Gets the bucket object.
 
 Lists all the objects located under the bucket object (if that bucket object is a folder).
 * `options` `<Object>` 
-	- `pattern` `<String|[String]>` Filters results using a glob pattern or an array of globbing patterns (e.g., `'**/*.png'` to only get png images).
-	- `ignore` `<String|[String]>` Filters results using a glob pattern or an array of globbing patterns to ignore some files or folders (e.g., `'**/*.png'` to return everything except png images).
+	- `pattern` `<String|Array<String>>` Filters results using a glob pattern or an array of globbing patterns (e.g., `'**/*.png'` to only get png images).
+	- `ignore` `<String|Array<String>>` Filters results using a glob pattern or an array of globbing patterns to ignore some files or folders (e.g., `'**/*.png'` to return everything except png images).
+	- `fields` `<Array<String>>` Whitelists the properties that are returned to increase network performance. The available fields are: 'kind','id','selfLink','name','bucket','generation','metageneration','contentType','timeCreated','updated','storageClass','timeStorageClassUpdated','size','md5Hash','mediaLink','crc32c','etag'.
 
 ### bucketObject.exists([options]): `<Promise<Boolean>>`
 
