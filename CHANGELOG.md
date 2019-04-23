@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.14.3"></a>
+## [0.14.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.2...v0.14.3) (2019-04-23)
+
+
+### Features
+
+* Add better error handling for bucket creation ([b16fc47](https://github.com/nicolasdao/google-cloud-bucket/commit/b16fc47))
+
+
+
 <a name="0.14.2"></a>
 ## [0.14.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.1...v0.14.2) (2019-04-22)
 
