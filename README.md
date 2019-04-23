@@ -7,7 +7,7 @@ __*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bu
 > * [How To Use It](#how-to-use-it) 
 >	- [Prerequisite](#prerequisite)
 >	- [Basics](#basics) 
->	- [Configuring Your Bucket Or Your File (CORS, Public, Website)](#configuring-your-bucket-or-your-file) 
+>	- [Configuring Your Bucket Or Your File (CORS, Public, Static Website)](#configuring-your-bucket-or-your-file) 
 >	- [Zipping Files](#zipping-files) 
 >	- [3 Ways To Create a Client](#3-ways-to-create-a-client)
 >	- [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)

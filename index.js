@@ -206,7 +206,19 @@ const createClient = (config) => {
 	const objectExists = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))
 	const getBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.config.get(bucket, token)).then(({ data }) => data))
 
-	const createBucket = (bucket, options={}) => _getToken(options.token).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ data }) => data)
+	const createBucket = (bucket, options={}) => _getToken(options.token).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ status, data }) => {
+		if (status > 299) {
+			let errMsg 
+			try {
+				errMsg = JSON.stringify(data)
+			} catch(e) {
+				(() => errMsg=`${data}`)(e)
+			}
+			throw new Error(`Failed to create bucket. Details: ${errMsg}`)
+		}
+		
+		return data
+	})
 	const deleteBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.bucket.delete(bucket, token))).then(({ status, data }) => {
 		let d = data
 		if (data instanceof Buffer) {
