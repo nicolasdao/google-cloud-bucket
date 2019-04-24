@@ -70,7 +70,7 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 		Authorization: `Bearer ${token}`
 	})
 
-	if (!headers['Content-Type'])
+	if (!headers['Content-Type'] && !headers['content-type'])
 		headers['Content-Type'] = contentType
 
 	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/'), options), headers, body: payload })
@@ -192,12 +192,18 @@ const getBucketFile = (bucket, filepath, token, options={}) => Promise.resolve(n
 
 	const { contentType } = urlHelper.getInfo(`https://neap.co/${filepath}`)
 
+	let headers = merge(options.headers || {}, { 
+		Authorization: `Bearer ${token}`
+	})
+
+	if (!headers['Content-Type'] && !headers['content-type'])
+		headers['Accept'] = contentType || 'application/json'
+	else
+		headers['Accept'] = headers['Content-Type'] || headers['content-type']
+
 	return fetch.get({ 
 		uri: `${BUCKET_FILE_URL(bucket, filepath)}?alt=media`, 
-		headers: {
-			Accept: contentType || 'application/json',
-			Authorization: `Bearer ${token}`
-		},
+		headers,
 		streamReader: options.streamReader,
 		dst: options.dst
 	})

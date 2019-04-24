@@ -20,7 +20,9 @@ const { getInfo } = require('./urlHelper')
  * @return {[type]}         				[description]
  */
 const _processResponse = (res, uri, options={}) => {
-	const { ext, contentType } = getInfo(uri || '')
+	let contentType = res && res.headers && typeof(res.headers.get) == 'function' ? res.headers.get('content-type') : null	
+	const { ext, contentType:ct } = getInfo(uri || '')
+	contentType = contentType || ct
 	
 	const isText = options.parsing == 'text' || (!options.dst && !options.streamReader && contentType && contentType.match(/(text|html|css|xml|javascript|rss|csv)/))
 	const isJson = options.parsing == 'json' || (!options.dst && !options.streamReader && (!ext || !contentType || contentType.match(/json/)))

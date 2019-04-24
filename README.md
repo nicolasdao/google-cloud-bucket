@@ -598,6 +598,7 @@ Gets bucketObject file name.
 
 Gets the bucket object.
 * `options` `<Object>` 
+	- `headers` `<Object>` The content type of each object request is automatically determined by the file's URL. However, there are scenarios where the extension is unknown or the content type must be overidden. In that case, this option can be used as follow: `{ headers: { 'Content-Type': 'application/json' } }`.
 
 ### bucketObject.list([options]): `<Promise<<Array<Object>>>`
 
@@ -617,6 +618,7 @@ Checks if a bucket object exists or not.
 Inserts a new object to that bucket object.
 * `object` `<Object>`Object you want to upload.
 * `options` `<Object>` 
+	- `headers` `<Object>` The content type of each object request is automatically determined by the file's URL. However, there are scenarios where the extension is unknown or the content type must be overidden. In that case, this option can be used as follow: `{ headers: { 'Content-Type': 'application/json' } }`.
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### bucketObject.insertFile(localPath[, options]): `<Promise<GoogleBucketObjectPlus>>`
