@@ -273,10 +273,13 @@ const createClient = (config) => {
 	 * 
 	 * @param  {String} bucket  		Bucket ID
 	 * @param  {String} filePath  		Path under that 'bucket'
+	 * @param  {String} options.type  	Valid values: 'file', 'folder'. By default, the type is determined based on the 'filePath'
+	 *                                 	but this can lead to errors. It is recommended to set this options.
 	 * @yield {Void} 
 	 */
 	const deleteObjectPlus = (bucket, filePath, options={}) => co(function *(){
-		if (!filePath || !bucket || extname(filePath)) {
+		const { type } = options
+		if (type != 'folder' && (type == 'file' || !filePath || !bucket || extname(filePath))) {
 			yield deleteObject(bucket, filePath, options)
 			return { count:1 }
 		}

@@ -632,6 +632,7 @@ Inserts a file located at `localPath` to that bucket object.
 
 Deletes an object or an entire folder. 
 * `options` `<Object>` 
+	- `type` `<String>` Valid values are `'file'` or `'folder'`. By default, the type is determined based on the `filePath` used when creating the `bucketObject` (`const bucketObject = storage.bucket(bucketId).object(filePath)`) but this can lead to errors. It is recommended to set this options explicitly.
 * Returns an object:
 	- `count` `<Number>` The number of files deleted.
 
