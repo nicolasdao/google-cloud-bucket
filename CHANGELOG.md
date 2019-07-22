@@ -1,6 +1,15 @@
-# Change Log
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.14.7](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.6...v0.14.7) (2019-07-22)
+
+
+### Bug Fixes
+
+* Vulnerability issues reported by github and npm ([37082ff](https://github.com/nicolasdao/google-cloud-bucket/commit/37082ff))
+
+
 
 <a name="0.14.6"></a>
 ## [0.14.6](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.5...v0.14.6) (2019-06-01)
