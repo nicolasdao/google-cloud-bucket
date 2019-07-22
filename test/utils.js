@@ -6,9 +6,6 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-/* global describe */
-/* global it */
-
 const { assert } = require('chai')
 const { urlHelper } = require('../src/utils')
 const { utils:{ validate } } = require('../index.js')
