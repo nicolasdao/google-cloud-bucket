@@ -1,5 +1,5 @@
 # Google Cloud Bucket &middot;  [![NPM](https://img.shields.io/npm/v/google-cloud-bucket.svg?style=flat)](https://www.npmjs.com/package/google-cloud-bucket) [![Tests](https://travis-ci.org/nicolasdao/google-cloud-bucket.svg?branch=master)](https://travis-ci.org/nicolasdao/google-cloud-bucket) [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Neap](https://neap.co/img/made_by_neap.svg)](#this-is-what-we-re-up-to)
-__*Google Cloud Bucket*__ is node.js package to add objects to a Google Cloud Bucket.
+__*Google Cloud Bucket*__ is a node.js package to manage Google Cloud Buckets and its objects. All read APIs uses an exponential backoff retry strategy in cases of errors. By default, that strategy times out after 10 seconds, but it can be configured.
 
 # Table of Contents
 
@@ -422,7 +422,8 @@ The above example only returns the `name` field. The full list of supported fiel
 
 Gets an object located under the bucket's `filePath` path.
 * `filePath` `<String>`
-* `options` `<Object>`  
+* `options` `<Object>`
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 * Returns a [GoogleBucketObject](#googlebucketobject) object.
 
 ### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<`[`GoogleBucketBase`](#googlebucketbase)|[`GoogleBucketObject`](#googlebucketobject)`>>>`
@@ -430,6 +431,7 @@ Gets an object located under the bucket's `filePath` path.
 Lists buckets for this project or objects under a specific `filePath`.
 * `filePath` `<String>` 
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 * Returns either
 	- An array of [GoogleBucketBase](#googlebucketbase) if no `filePath` is passed.
 	- An array of [GoogleBucketObject](#googlebucketobject) if a `filePath` is passed.
@@ -440,6 +442,7 @@ Inserts a new object to `filePath`.
 * `object` `<Object>`Object you want to upload.
 * `filePath` `<String>`Storage's pathname destination where that object is uploaded, e.g., `your-bucket-id/media/css/style.css`.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### storage.insertFile(localPath, filePath[, options]): `<Promise<`[`GoogleBucketObjectPlus`](#googlebucketobjectplus)`>>`
@@ -448,6 +451,7 @@ Inserts a file located at `localPath` to `filePath`.
 * `localPath` `<String>`Absolute path on your local machine of the file you want to upload.
 * `filePath` `<String>` Storage's pathname destination where that object is uploaded, e.g., `your-bucket-id/media/css/style.css`.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### storage.exists(filePath[, options]): `<Promise<Boolean>>`
@@ -455,18 +459,21 @@ Inserts a file located at `localPath` to `filePath`.
 Checks whether an object located under the `filePath` path exists or not.
 * `filePath` `<String>` 
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### storage.addPublicAccess(filePath[, options]): `<Promise<Object>>`
 
 Grants public access to a file located under the `filePath` path.
 * `filePath` `<String>` 
-* `options` <Object>  
+* `options` `<Object>`
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds). 
 
 ### storage.removePublicAccess(filePath[, options]): `<Promise<Object>>`
 
 Removes public access from a file located under the `filePath` path.
 * `filePath` `<String>` 
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### storage.bucket(bucketId): `<Bucket>`
 
@@ -489,17 +496,20 @@ Gets the bucket's name
 
 Gets a bucket's metadata object.
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.exists([options]): `<Promise<Boolean>>`
 
 Checks if a bucket exists.
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.create([options]): `<Promise<Object>>`
 
 Creates a new bucket.
 * `options` `<Object>`  
 	- `location` `<String>` Default is `US`. The full list can be found in section [List Of All Google Cloud Platform Locations](#list-of-all-google-cloud-platform-locations).
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 > WARNING: A bucket's name must follow clear guidelines (more details in the [Annexes](#annexes) under the [Bucket Name Restrictions](#bucket-name-restrictions) section). To facilitate the buckets name validation, a mathod called `validate.bucketName` is provided:
 >	```js
@@ -527,21 +537,25 @@ Deletes a bucket.
 Updates a bucket.
 * `config` `<Object>` 
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.addPublicAccess([options]): `<Promise<Object>>`
 
 Grants public access to a bucket as well as all its files.
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.removePublicAccess([options]): `<Promise<Object>>`
 
 Removes public access from a bucket as well as all its files.
 * `options` `<Object>`  
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.isPublic([options]): `<Promise<Boolean>>`
 
 Checks if a bucket is public or not.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.zip([options]): `<Promise<Object>>`
 
@@ -553,17 +567,20 @@ Zips bucket.
 Checks if a bucket has been configured with specific CORS setup.
 * `corsConfig` `<Object>` 
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.cors.setup(corsConfig, [options]): `<Promise<Object>>`
 
 Configures a bucket with a specific CORS setup.
 * `corsConfig` `<Object>` 
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.cors.disable([options]): `<Promise<Object>>`
 
 Removes any CORS setup from a bucket.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.website.setup(webConfig, [options]): `<Promise<Object>>`
 
@@ -575,6 +592,7 @@ Configures a bucket with a specific website setup.
 	- `mainPageSuffix` `<String>` This is the file that would be served by default when the website's pathname does not specify any explicit file name (e.g., use `index.html` so that https://your-domain.com is equivalent to http://your-domain.com/index.html).
 	- `notFoundPage` `<String>` This is the page that would be served if your user enter a URL that does not match any file (e.g., `404.html`).
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucket.object(filePath): `<BucketObject>`
 
@@ -599,6 +617,7 @@ Gets bucketObject file name.
 Gets the bucket object.
 * `options` `<Object>` 
 	- `headers` `<Object>` The content type of each object request is automatically determined by the file's URL. However, there are scenarios where the extension is unknown or the content type must be overidden. In that case, this option can be used as follow: `{ headers: { 'Content-Type': 'application/json' } }`.
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucketObject.list([options]): `<Promise<<Array<Object>>>`
 
@@ -607,11 +626,13 @@ Lists all the objects located under the bucket object (if that bucket object is 
 	- `pattern` `<String|Array<String>>` Filters results using a glob pattern or an array of globbing patterns (e.g., `'**/*.png'` to only get png images).
 	- `ignore` `<String|Array<String>>` Filters results using a glob pattern or an array of globbing patterns to ignore some files or folders (e.g., `'**/*.png'` to return everything except png images).
 	- `fields` `<Array<String>>` Whitelists the properties that are returned to increase network performance. The available fields are: 'kind','id','selfLink','name','bucket','generation','metageneration','contentType','timeCreated','updated','storageClass','timeStorageClassUpdated','size','md5Hash','mediaLink','crc32c','etag'.
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucketObject.exists([options]): `<Promise<Boolean>>`
 
 Checks if a bucket object exists or not.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucketObject.insert(object[, options]): `<Promise<GoogleBucketObjectPlus>>`
 
@@ -619,6 +640,7 @@ Inserts a new object to that bucket object.
 * `object` `<Object>`Object you want to upload.
 * `options` `<Object>` 
 	- `headers` `<Object>` The content type of each object request is automatically determined by the file's URL. However, there are scenarios where the extension is unknown or the content type must be overidden. In that case, this option can be used as follow: `{ headers: { 'Content-Type': 'application/json' } }`.
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### bucketObject.insertFile(localPath[, options]): `<Promise<GoogleBucketObjectPlus>>`
@@ -626,6 +648,7 @@ Inserts a new object to that bucket object.
 Inserts a file located at `localPath` to that bucket object.
 * `localPath` `<String>`Absolute path on your local machine of the file you want to upload.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### bucketObject.delete([options]): `<Promise<Object>>`
@@ -635,6 +658,7 @@ Deletes an object or an entire folder.
 	- `type` `<String>` Valid values are `'file'` or `'folder'`. By default, the type is determined based on the `filePath` used when creating the `bucketObject` (`const bucketObject = storage.bucket(bucketId).object(filePath)`) but this can lead to errors. It is recommended to set this options explicitly.
 * Returns an object:
 	- `count` `<Number>` The number of files deleted.
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 > NOTE: To delete a folder, the argument used to create the `bucketObject` must be a folder (e.g., `storage.bucket('your-bucket-id').object('folderA/folderB').delete()`)
 
@@ -642,17 +666,20 @@ Deletes an object or an entire folder.
 
 Lists all the objects located under the bucket object (if that bucket object is a folder). 
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucketObject.addPublicAccess([options]): `<Promise<Object>>`
 
 Grants public access to a bucket object.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ### bucketObject.removePublicAccess([options]): `<Promise<Object>>`
 
 Removes public access from
  a bucket object.
 * `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
 ## Objects
 ### GoogleBucketBase
