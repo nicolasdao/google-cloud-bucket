@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.14.8](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.7...v0.14.8) (2019-10-23)
+
+
+### Bug Fixes
+
+* 2 vulnerabilities (1 high, 1 critical) ([91b0ace](https://github.com/nicolasdao/google-cloud-bucket/commit/91b0ace))
+
+
+
 ### [0.14.7](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.6...v0.14.7) (2019-07-22)
 
 
