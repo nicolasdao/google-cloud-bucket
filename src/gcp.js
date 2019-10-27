@@ -103,8 +103,9 @@ const putObjectMultipart = (object, filePath, token, headers) => Promise.resolve
 
 	const meta = Object.keys(headers).reduce((acc, header) => {
 		const v = headers[header]
-		const keyValue = typeof(v) == 'string' ? `"${header}": "${v}"` : `"${header}": ${v}`
-		if (_isStdHeader(header))
+		const stdHeader = _getStdHeader(header)
+		const keyValue = typeof(v) == 'string' ? `"${stdHeader || header}": "${v}"` : `"${stdHeader || header}": ${v}`
+		if (stdHeader)
 			acc.std.push(keyValue)
 		else 
 			acc.metadata.push(`	${keyValue}`)
@@ -665,14 +666,27 @@ const setupWebsite = (bucket, webConfig={}, token) => Promise.resolve(null).then
 	})
 })
 
-const _isStdHeader = header => 
-	header == 'cacheControl' 
-	|| header == 'contentDisposition' 
-	|| header == 'contentEncoding' 
-	|| header == 'contentLanguage' 
-	|| header == 'contentType' 
-	|| header == 'eventBasedHold' 
-	|| header == 'temporaryHold'
+const _getStdHeader = header => {
+	if (!header)
+		return null
+	const h = header.toLowerCase().replace(/-/g,'')
+	if (h == 'cachecontrol')
+		return 'cacheControl'
+	else if (h == 'contentdisposition')
+		return 'contentDisposition' 
+	else if (h == 'contentencoding')
+		return 'contentEncoding' 
+	else if (h == 'contentlanguage')
+		return 'contentLanguage' 
+	else if (h == 'contenttype')
+		return 'contentType' 
+	else if (h == 'eventbasedhold')
+		return 'eventBasedHold' 
+	else if (h == 'temporaryhold')
+		return 'temporaryHold'
+	else
+		return null
+}
 
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/objects/update
 const updateObjectMetadata = (bucket, filepath, meta, token) => co(function *(){
@@ -703,8 +717,9 @@ const updateObjectMetadata = (bucket, filepath, meta, token) => co(function *(){
 		throw new Error(`Resource ${resourceUri} not found.`)
 
 	metaKeys.forEach(key => {
-		if (_isStdHeader(key))
-			data[key] = meta[key]
+		const stdKey = _getStdHeader(key)
+		if (stdKey)
+			data[stdKey] = meta[key]
 		else {
 			if (!data.metadata)
 				data.metadata = {}
