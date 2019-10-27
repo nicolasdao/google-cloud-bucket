@@ -32,6 +32,12 @@ const { fetch, urlHelper, obj: { merge } } = require('./utils')
 // storageClass: 'STANDARD',
 // etag: 'CAQ='
 
+const BUCKET_BASE_UPLOAD_URL = 'https://www.googleapis.com/upload/storage/v1/b'
+const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `${BUCKET_BASE_UPLOAD_URL}/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}${options.contentEncoding ? `&contentEncoding=${encodeURIComponent(options.contentEncoding)}` : ''}`
+const BUCKET_UPLOAD_MULTIPART_URL = bucket => `${BUCKET_BASE_UPLOAD_URL}/${encodeURIComponent(bucket)}/o?uploadType=multipart`
+const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
+const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
+
 /**
  * [description]
  * @param  {String} projectId 			[description]
@@ -49,9 +55,6 @@ const BUCKET_LIST_URL = (projectId, options) => {
 
 	return `https://www.googleapis.com/storage/v1/b?${query.join('&')}`
 }
-const BUCKET_UPLOAD_URL = (bucket, fileName, options={}) => `https://www.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=${options.resumable ? 'resumable' : 'media'}&name=${encodeURIComponent(fileName)}${options.contentEncoding ? `&contentEncoding=${encodeURIComponent(options.contentEncoding)}` : ''}`
-const BUCKET_URL = bucket => `https://www.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}`
-const BUCKET_FILE_URL = (bucket, filepath) => `${BUCKET_URL(bucket)}/o${ filepath ? `${filepath ? `/${encodeURIComponent(filepath)}` : ''}` : ''}`
 
 const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => {
 	if (params[p] === null || params[p] === undefined)
@@ -59,6 +62,15 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 })
 
 const putObject = (object, filePath, token, options={}) => Promise.resolve(null).then(() => {
+	const h = options.headers || {}
+	const headersProps = Object.keys(h)
+	const useMultiPartUpload = 
+		headersProps.length > 0 
+		&& !(headersProps.length == 1 && (h['Content-Type'] || h['content-type']))
+
+	if (useMultiPartUpload)
+		return putObjectMultipart(object, filePath, token, h)
+
 	_validateRequiredParams({ object, filePath, token })
 	const t = typeof(object)
 	const payload = t == 'string' || t == 'number' || t == 'boolean' || (object instanceof Buffer) ? object : JSON.stringify(object || {})
@@ -75,6 +87,72 @@ const putObject = (object, filePath, token, options={}) => Promise.resolve(null)
 		headers['Content-Type'] = contentType
 
 	return fetch.post({ uri: BUCKET_UPLOAD_URL(bucket, names.join('/'), options), headers, body: payload })
+})
+
+const putObjectMultipart = (object, filePath, token, headers) => Promise.resolve(null).then(() => {
+	_validateRequiredParams({ object, filePath, token })
+	const t = typeof(object)
+	const content = Buffer.from(t == 'string' || t == 'number' || t == 'boolean' || (object instanceof Buffer) ? object : JSON.stringify(object || {}), 'binary')
+
+	const [ bucket, ...names ] = filePath.split('/')
+	const file = names.join('/')
+
+	const { contentType='application/json' } = urlHelper.getInfo(`https://neap.co/${filePath}`)
+
+	const boundary = 'foo_bar_baz'
+
+	const meta = Object.keys(headers).reduce((acc, header) => {
+		const v = headers[header]
+		const keyValue = typeof(v) == 'string' ? `"${header}": "${v}"` : `"${header}": ${v}`
+		if (_isStdHeader(header))
+			acc.std.push(keyValue)
+		else 
+			acc.metadata.push(`	${keyValue}`)
+		return acc
+	}, { std:[], metadata:[] })
+
+	let fields = meta.std.join(',\r\n	')
+	if (meta.metadata[0]) {
+		if (fields)
+			fields += ',\r\n	'
+
+		fields += `"metadata": {\r\n		${meta.metadata.join(',\r\n		')}\r\n	}`
+	}
+
+	if (fields)
+		fields = `"name": "${file}",\r\n	${fields}`
+	else
+		fields = `"name": "${file}"`
+
+	const metadata = [
+		`--${boundary}`,
+		'Content-Type: application/json; charset=UTF-8',
+		'',
+		'{',
+		`	${fields}`,
+		'}',
+		'',
+		`--${boundary}`,
+		`Content-Disposition: form-data; name="${file}"; filename="${file}"`,
+		`Content-Type: ${contentType}`,
+		'',
+		''
+	].join('\r\n')
+
+	const payload = Buffer.concat([
+		Buffer.from(metadata, 'utf8'),
+		Buffer.from(content, 'binary'),
+		Buffer.from('\r\n--' + boundary + '--\r\n', 'utf8')
+	])
+
+	return fetch.post({ 
+		uri: BUCKET_UPLOAD_MULTIPART_URL(bucket), 
+		headers:{ 
+			'Content-Type': `multipart/related; boundary=${boundary}`,
+			'Content-Length': payload.length,
+			Authorization: `Bearer ${token}`
+		}, 
+		body: payload })
 })
 
 const deleteObject = (bucketId, filepath, token) => Promise.resolve(null).then(() => {
@@ -587,6 +665,15 @@ const setupWebsite = (bucket, webConfig={}, token) => Promise.resolve(null).then
 	})
 })
 
+const _isStdHeader = header => 
+	header == 'cacheControl' 
+	|| header == 'contentDisposition' 
+	|| header == 'contentEncoding' 
+	|| header == 'contentLanguage' 
+	|| header == 'contentType' 
+	|| header == 'eventBasedHold' 
+	|| header == 'temporaryHold'
+
 // Doc: https://cloud.google.com/storage/docs/json_api/v1/objects/update
 const updateObjectMetadata = (bucket, filepath, meta, token) => co(function *(){
 	_validateRequiredParams({ bucket, token, filepath, meta })
@@ -616,13 +703,7 @@ const updateObjectMetadata = (bucket, filepath, meta, token) => co(function *(){
 		throw new Error(`Resource ${resourceUri} not found.`)
 
 	metaKeys.forEach(key => {
-		if (key == 'cacheControl' 
-			|| key == 'contentDisposition' 
-			|| key == 'contentEncoding' 
-			|| key == 'contentLanguage' 
-			|| key == 'contentType' 
-			|| key == 'eventBasedHold' 
-			|| key == 'temporaryHold')
+		if (_isStdHeader(key))
 			data[key] = meta[key]
 		else {
 			if (!data.metadata)
