@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.15.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.8...v0.15.0) (2019-10-27)
+
+
+### Features
+
+* Add support for adding custom headers. ([5a620f7](https://github.com/nicolasdao/google-cloud-bucket/commit/5a620f7))
+
+
+
 ### [0.14.8](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.14.7...v0.14.8) (2019-10-23)
 
 

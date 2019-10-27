@@ -1,6 +1,6 @@
 {
   "name": "google-cloud-bucket",
-  "version": "0.14.8",
+  "version": "0.15.0",
   "description": "Nodejs package to manage Google Cloud Buckets and its objects.",
   "main": "index.js",
   "repository": {
