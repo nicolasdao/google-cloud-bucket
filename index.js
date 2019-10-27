@@ -136,6 +136,8 @@ const _filterBucketObjects = (data, options) => {
 	})
 }
 
+const _getPublicUri = filePath => `https://storage.googleapis.com/${(filePath || '').replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`
+
 /**
  * [description]
  * @param  {String} config.jsonKeyFile 	Path to the service-account.json file. If specified, 'clientEmail', 'privateKey', 'projectId' are not required.
@@ -196,15 +198,24 @@ const createClient = (config) => {
 	const deleteObject = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.delete(bucket, filePath, token, options), options))
 		.then(res => res && res.status == 404 ? { data:null } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data)
-	const listObjects = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token, options), options)
+	const listObjectsMetadata = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token, options), options)
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
-		.then(({ data }) => _filterBucketObjects(data, options)))
+		.then(({ data }) => _filterBucketObjects(data, options))
+		.then(data => data ? data.map(d => { d.publicUri = _getPublicUri(`${bucket}/${filePath}`);return d }) : data))
 	const listBuckets = (options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.bucket.list(projectId, token, options), options)
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data))
 	
 	const objectExists = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))
 	const getBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.config.get(bucket, token), options).then(({ data }) => data))
+	const getObjectInfo = (bucket, filePath, options) => listObjectsMetadata(bucket, filePath, options || {}).then(data => {
+		if (!data)
+			return null 
+		if (data.length == 1)
+			return data[0]
+		else
+			return null
+	})
 
 	const createBucket = (bucket, options={}) => _getToken(options.token).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ status, data }) => {
 		if (status > 299) {
@@ -235,7 +246,7 @@ const createClient = (config) => {
 	})
 	const isBucketPublic = (bucket, options={}) => _getToken(options.token).then(token => gcp.config.isBucketPublic(bucket, token))
 	const isCorsSetUp = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
-	const setupCors = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.setup(bucket, corsConfig, token)).then(({ data }) => data)
+	const setupCors = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.setup(bucket, corsConfig, token, options)).then(({ data }) => data)
 	const disableCors = (bucket, options={}) => _getToken(options.token).then(token => gcp.config.cors.disable(bucket, token)).then(({ data }) => data)
 	const setupWebsite = (bucket, webConfig, options={}) => _getToken(options.token).then(token => gcp.config.website.setup(bucket, webConfig, token)).then(({ data }) => data)
 	const updateConfig = (bucket, config={}, options={}) => _getToken(options.token).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
@@ -251,7 +262,7 @@ const createClient = (config) => {
 	const insertObject = (object, filePath, options={}) => putObject(object, filePath, options)
 		.then(data => {
 			if (data)
-				data.publicUri = `https://storage.googleapis.com/${(filePath || '').replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`
+				data.publicUri = _getPublicUri(filePath)
 			if (options.public)
 				return addPublicAccess(filePath).then(({ uri }) => {
 					if (data)
@@ -267,6 +278,11 @@ const createClient = (config) => {
 		const { bucket, file } = _getBucketAndPathname(filePath)
 		return getObject(bucket, file, options)
 	})
+
+	const updateObjectHeaders = (filePath, meta, options={}) => _getToken(options.token).then(token => {
+		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
+		return gcp.config.object.update(bucket, file, meta, token)
+	}).then(({ data }) => data)
 
 	/**
 	 * Augments the 'deleteObject' function with the ability to delete all files under a path. 
@@ -284,7 +300,7 @@ const createClient = (config) => {
 			return { count:1 }
 		}
 		
-		const files = yield listObjects(bucket, filePath, options)
+		const files = yield listObjectsMetadata(bucket, filePath, options)
 		const count = files ? files.length : 0
 		if (count > 0) {
 			const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name, options)))
@@ -306,7 +322,7 @@ const createClient = (config) => {
 			return { count:0, data:res }
 		}
 
-		const files = (yield listObjects(bucket, '/', options)) || []
+		const files = (yield listObjectsMetadata(bucket, '/', options)) || []
 		const count = files.length
 		if (count > 0) {
 			const deleteTasks = files.map(({ name }) => (() => deleteObject(bucket, name, options)))
@@ -331,7 +347,7 @@ const createClient = (config) => {
 	 * @param  {String} options.on['error']
 	 * @return {[type]}          						[description]
 	 */
-	const zipFiles = (bucket, filePath, options) => listObjects(bucket, filePath, options)
+	const zipFiles = (bucket, filePath, options) => listObjectsMetadata(bucket, filePath, options)
 		.then(objects => {
 			objects = objects || []
 			options = options || {}
@@ -433,7 +449,7 @@ const createClient = (config) => {
 				return listBuckets(options)
 
 			const { bucket, file } = _getBucketAndPathname(filepath, { ignoreMissingFile: true })
-			return listObjects(bucket, file, options)
+			return listObjectsMetadata(bucket, file, options)
 		}),
 		insert: insertObject,
 		insertFile,
@@ -474,9 +490,11 @@ const createClient = (config) => {
 				removePublicAccess: (options={}) => removePublicAccess(bucketName, options),
 				isPublic: (options={}) => isBucketPublic(bucketName, options),
 				cors: {
+					'get': (options={}) => getBucket(bucketName, options).then(data => ((data || {}).cors || [])[0] || null),
 					exists: (corsConfig, options={}) => isCorsSetUp(bucketName, corsConfig, options),
 					setup: (corsConfig, options={}) => setupCors(bucketName, corsConfig, options),
-					disable: (options={}) => disableCors(bucketName, options)
+					disable: (options={}) => disableCors(bucketName, options),
+					update: ({ add, remove }, options={}) => setupCors(bucketName, { add, remove }, { ...options, mode:'update' })
 				},
 				website: {
 					// webConfig: {
@@ -493,14 +511,18 @@ const createClient = (config) => {
 					return {
 						file: filePath,
 						'get': (options={}) => getObjectV2(posix.join(bucketName, filePath), options),
+						getInfo: (options={}) => getObjectInfo(bucketName, filePath, options),
 						delete: (options={}) => deleteObjectPlus(bucketName, filePath, options),
-						list: (options={}) => listObjects(bucketName, filePath, options),
+						list: (options={}) => listObjectsMetadata(bucketName, filePath, options),
 						exists: (options={}) => objectExists(bucketName, filePath, options),
 						insert: (object, options={}) => insertObject(object, posix.join(bucketName, filePath), options),
 						insertFile: (localPath, options={}) => insertFile(localPath, posix.join(bucketName, filePath), options),
 						zip: (options={}) => zipFiles(bucketName, filePath, options),
 						addPublicAccess: (options={}) => addPublicAccess(posix.join(bucketName, filePath), options),
-						removePublicAccess: (options={}) => removePublicAccess(posix.join(bucketName, filePath), options)
+						removePublicAccess: (options={}) => removePublicAccess(posix.join(bucketName, filePath), options),
+						headers: {
+							update: (meta, options={}) => updateObjectHeaders(posix.join(bucketName, filePath), meta, options),
+						}
 					}
 				}
 			}

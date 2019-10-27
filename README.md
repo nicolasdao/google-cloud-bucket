@@ -418,15 +418,28 @@ The above example only returns the `name` field. The full list of supported fiel
 
 # Full API Doc
 ## Storage API
+
+> To create the `storage` object, please refer to the previous section [3 Ways To Create a Client](#3-ways-to-create-a-client). 
+
+This object allows to perform most read/write operations. It uses a string representing the path to where the objects or folders are. If using path is the stragegy you decide to employ to manage objects, then the Storage API is the way to go. If, on the contrary, you need to reason based on a specific bucket or a specific object, then it is recommended to use the [Bucket API](#bucket-api) or the [BucketObject API](#bucketobject-api). 
+
 ### storage.get(filePath[, options]): `<Promise<`[`GoogleBucketObject`](#googlebucketobject)`>>`
+
+`storage.get('your-bucket-name/path-to-file/your-file.css').then(console.log)`
+
+This writes a CSS content to the output.
 
 Gets an object located under the bucket's `filePath` path.
 * `filePath` `<String>`
 * `options` `<Object>`
 	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
-* Returns a [GoogleBucketObject](#googlebucketobject) object.
+* Returns the content of the file in the format defined by its mime type (e.g., json object, string, buffer).
 
 ### storage.list([options]) or storage.list(filePath[, options]): `<Promise<Array<`[`GoogleBucketBase`](#googlebucketbase)|[`GoogleBucketObject`](#googlebucketobject)`>>>`
+
+`storage.list('your-bucket-name/path-to-file').then(console.log)`
+
+This writes an array of object describing all the files under that path to the output.
 
 Lists buckets for this project or objects under a specific `filePath`.
 * `filePath` `<String>` 
@@ -438,6 +451,8 @@ Lists buckets for this project or objects under a specific `filePath`.
 
 ### storage.insert(object, filePath[, options]): `<Promise<`[`GoogleBucketObjectPlus`](#googlebucketobjectplus)`>>`
 
+`storage.insert({ hello:'world' }, 'your-bucket-name/path-to-file/sample.json').then(console.log)`
+
 Inserts a new object to `filePath`.
 * `object` `<Object>`Object you want to upload.
 * `filePath` `<String>`Storage's pathname destination where that object is uploaded, e.g., `your-bucket-id/media/css/style.css`.
@@ -446,6 +461,8 @@ Inserts a new object to `filePath`.
 * Returns a [GoogleBucketObjectPlus](#googlebucketobjectplus) object.
 
 ### storage.insertFile(localPath, filePath[, options]): `<Promise<`[`GoogleBucketObjectPlus`](#googlebucketobjectplus)`>>`
+
+`storage.insert('/Users/you/your-file.jpg', 'your-bucket-name/path-to-file/your-file.jpg').then(console.log)`
 
 Inserts a file located at `localPath` to `filePath`.
 * `localPath` `<String>`Absolute path on your local machine of the file you want to upload.
@@ -562,6 +579,14 @@ Checks if a bucket is public or not.
 Zips bucket.
 * `options` `<Object>` 
 
+### bucket.cors.get([options]): `<Promise<`[`GoogleBucketCORS`](#googlebucketcors)`>>`
+
+Get's the bucket's CORS setup.
+* `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
+
+* Returns a [`GoogleBucketCORS`](#googlebucketcors) object.
+
 ### bucket.cors.exists(corsConfig, [options]): `<Promise<Boolean>>`
 
 Checks if a bucket has been configured with specific CORS setup.
@@ -572,9 +597,22 @@ Checks if a bucket has been configured with specific CORS setup.
 ### bucket.cors.setup(corsConfig, [options]): `<Promise<Object>>`
 
 Configures a bucket with a specific CORS setup.
-* `corsConfig` `<Object>` 
+* [`corsConfig` `<GoogleBucketCORS>`](#googlebucketcors): 
+	- `origin` `<Array<String>>`: e.g., `['*']`.
+	- `method` `<Array<String>>`: e.g., `['GET', 'OPTIONS', 'HEAD', 'POST']`.
+	- `responseHeader` `<Array<String>>`: e.g., `['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept']`.
+	- `maxAgeSeconds` `<Number>`: e.g., `3600`.
 * `options` `<Object>` 
 	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
+
+### bucket.cors.update({ add: addConfig, remove: delConfig }): `<Promise<`[`GoogleBucketCORS`](#googlebucketcors)`>>`
+
+> WARNING: A CORS config must exist prior to calling this API, otherwise, an error is thrown.
+
+`bucket.cors.update({ add:{ responseHeader:['Accept'] }, remove:{ responseHeader:['Authorize'] } })`
+
+* `addConfig` `<`[`GoogleBucketCORS`](#googlebucketcors)`>`
+* `delConfig` `<`[`GoogleBucketCORS`](#googlebucketcors)`>`
 
 ### bucket.cors.disable([options]): `<Promise<Object>>`
 
@@ -608,20 +646,42 @@ const bucket = storage.bucket('your-bucket-id')
 const bucketObject = bucket.object('folder1/folder2/index.html')
 ```
 
+An bucket object can also be a folder:
+
+```js
+const bucketFolder = bucket.object('folder1/folder2')
+```
+
 ### bucketObject.file: `<String>`
+
+`console.log(bucketObject.file)`
 
 Gets bucketObject file name.
 
 ### bucketObject.get([options]): `<Promise<<Object>>`
+
+> WARNING: Only works if the object is a file. Will not work for folder.
+
+`bucketObject.get().then(console.log)`
 
 Gets the bucket object.
 * `options` `<Object>` 
 	- `headers` `<Object>` The content type of each object request is automatically determined by the file's URL. However, there are scenarios where the extension is unknown or the content type must be overidden. In that case, this option can be used as follow: `{ headers: { 'Content-Type': 'application/json' } }`.
 	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
 
+### bucketObject.getInfo([options]): `<Promise<Object>>`
+
+> WARNING: Only works if the object is a file. Will not work for folder.
+
+`bucketObject.getInfo().then(console.log)`
+
+Gets the file's metadata.
+* `options` `<Object>` 
+	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
+
 ### bucketObject.list([options]): `<Promise<<Array<Object>>>`
 
-Lists all the objects located under the bucket object (if that bucket object is a folder).
+Lists all the objects' metadata located under the bucket object if that bucket object is a folder. If the object is a file, the response is a single object array where the only object represents the file's metadata.
 * `options` `<Object>` 
 	- `pattern` `<String|Array<String>>` Filters results using a glob pattern or an array of globbing patterns (e.g., `'**/*.png'` to only get png images).
 	- `ignore` `<String|Array<String>>` Filters results using a glob pattern or an array of globbing patterns to ignore some files or folders (e.g., `'**/*.png'` to return everything except png images).
@@ -680,6 +740,25 @@ Removes public access from
  a bucket object.
 * `options` `<Object>` 
 	- `timeout` `number`: Default 10,000 (i.e., 10 seconds).
+
+### bucketObject.headers.update(headers): `<Promise<`[`GoogleBucketBase`](#googlebucketbase)`>>`
+
+> WARNING: Only works if the object is a file. Will not work for folder.
+
+`bucketObject.headers.update({ cacheControl:'public, max-age=3600', 'X-Content-Type-Options':'nosniff' })`
+
+Adds or remove headers on the object.
+
+* `headers` `<Object>`. There are 2 types of headers: The _standard_ and _custom_ headers. The _standard_ headers are a subset of the standard HTTP standard, while the _custom_ ones are whatever you want, BUT they will all be prefixed with `x-goog-meta-`.
+	- `contentDisposition` `<String>` (standard): This is equivalent to the `content-disposition` response header.
+	- `contentEncoding` `<String>` (standard): This is equivalent to the  `content-encoding` response header.
+	- `contentLanguage` `<String>` (standard): This is equivalent to the  `content-language` response header.
+	- `contentType` `<String>` (standard): This is equivalent to the  `content-type` response header.
+	- `whatever-you-want` `<String>` (custom)
+
+### bucketObject.removeHeaders(object): `<Promise<Object>>`
+
+> WARNING: Only works if the object is a file. Will not work for folder.
 
 ## Objects
 ### GoogleBucketBase

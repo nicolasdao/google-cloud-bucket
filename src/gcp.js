@@ -12,6 +12,7 @@
 // Resumable upload: https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload
 // Partial Response: https://cloud.google.com/storage/docs/json_api/v1/how-tos/performance#partial-response
 
+const co = require('co')
 const { fetch, urlHelper, obj: { merge } } = require('./utils')
 
 // Bucket Object Schema:
@@ -451,15 +452,102 @@ const updateConfig = (bucket, config={}, token) => Promise.resolve(null).then(()
 	})
 })
 
-const setupCors = (bucket, corsConfig={}, token, options={}) => Promise.resolve(null).then(() => {
+const _addValuesToCORS = (cors, { origin, method, responseHeader, maxAgeSeconds }) => {
+	cors = cors || {}
+	if (origin && origin[0]) {
+		cors.origin = cors.origin || []
+		origin.forEach(x => {
+			if (!cors.origin.some(y => y == x))
+				cors.origin.push(x)
+		})
+	}
+	if (method && method[0]) {
+		cors.method = cors.method || []
+		method.forEach(x => {
+			if (!cors.method.some(y => y == x))
+				cors.method.push(x)
+		})
+	}
+	if (responseHeader && responseHeader[0]) {
+		cors.responseHeader = cors.responseHeader || []
+		responseHeader.forEach(x => {
+			if (!cors.responseHeader.some(y => y == x))
+				cors.responseHeader.push(x)
+		})
+	}
+	if (typeof(maxAgeSeconds) == 'number')
+		cors.maxAgeSeconds = maxAgeSeconds
+}
+
+const _removeValuesToCORS = (cors, { origin, method, responseHeader }) => {
+	if (!cors)
+		return
+
+	if (cors.origin && cors.origin[0] && origin && origin[0])
+		cors.origin = cors.origin.filter(y => !origin.some(x => x == y))
+	if (cors.method && cors.method[0] && method && method[0])
+		cors.method = cors.method.filter(y => !method.some(x => x == y))
+	if (cors.responseHeader && cors.responseHeader[0] && responseHeader && responseHeader[0])
+		cors.responseHeader = cors.responseHeader.filter(y => !responseHeader.some(x => x == y))
+}
+
+/**
+ * Manages the CORS cofiguration of a bucket. The CORS object's schema is as follow:
+ * 	- origin: e.g., ['*']
+ * 	- method: e.g., ['GET', 'POST']
+ * 	- responseHeader: e.g., ['Authorization', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept']
+ * 	- maxAgeSeconds: e.g., 3600
+ * 
+ * @param {String}	bucket
+ * @param {Object}	corsConfig		Either a CORS object or { add: <CORS>, remove: <CORS> } in case of options.mode == 'update'
+ * @param {String}	token
+ * @yield {String}	options.mode	Default 'override'. Valid values: 'override', 'update', 'delete'
+ */
+const setupCors = (bucket, corsConfig={}, token, options) => co(function *() {
+	options = options || {}
 	_validateRequiredParams({ bucket, token })
-	if (options.mode != 'delete')
+
+	const updateMode = options.mode == 'update'
+	const deleteMode = options.mode == 'delete'
+
+	if (updateMode) {
+		const { add, remove } = corsConfig
+		if (!add && !remove)
+			throw new Error(`Failed to update CORS configuration for bucket ${bucket}. Missing required property. 'corsConfig' must contain an 'add' or 'remove' property.`)
+
+		if (add && typeof(add) != 'object')
+			throw new Error(`Failed to update CORS configuration for bucket ${bucket}. Wrong argument exception for property 'add'. Expecting an object, found a ${typeof(add)}.`)
+		if (remove && typeof(remove) != 'object')
+			throw new Error(`Failed to update CORS configuration for bucket ${bucket}. Wrong argument exception for property 'remove'. Expecting an object, found a ${typeof(remove)}.`)
+	}
+
+	if (!deleteMode && !updateMode)
 		_validateCorsConfig(corsConfig)
 
-	const cors = options.mode != 'delete' ? [corsConfig] : []
+	let cors = yield (updateMode 
+		? getBucket(bucket, token).then(({ status, data }) => {
+			if (status == 404)
+				throw new Error(`Bucket ${bucket} not found.`)
+			
+			const cors = ((data || {}).cors || [])[0]
+			if (!cors)
+				throw new Error(`CORS configuration for bucket ${bucket} not found.`)
+			return [cors]
+		})
+		: Promise.resolve(!deleteMode ? [corsConfig] : []))
+
+	if (updateMode) {
+		const { add, remove } = corsConfig
+		if (add) 
+			_addValuesToCORS(cors[0], add)
+		if (remove) 
+			_removeValuesToCORS(cors[0], remove)
+		
+	}
+
 	const payload = JSON.stringify({cors})
 
-	return fetch.patch({ 
+	let { status, data } = yield fetch.patch({ 
 		uri: BUCKET_URL(bucket), 
 		headers: {
 			'Content-Type': 'application/json',
@@ -467,11 +555,11 @@ const setupCors = (bucket, corsConfig={}, token, options={}) => Promise.resolve(
 		}, 
 		body: payload,
 		parsing: 'json'
-	}).then(({ status, data }) => {
-		data = data || {}
-		data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
-		return { status, data }
 	})
+
+	data = data || {}
+	data.uri = `https://storage.googleapis.com/${encodeURIComponent(bucket)}`
+	return { status, data }
 })
 
 const setupWebsite = (bucket, webConfig={}, token) => Promise.resolve(null).then(() => {
@@ -499,6 +587,56 @@ const setupWebsite = (bucket, webConfig={}, token) => Promise.resolve(null).then
 	})
 })
 
+// Doc: https://cloud.google.com/storage/docs/json_api/v1/objects/update
+const updateObjectMetadata = (bucket, filepath, meta, token) => co(function *(){
+	_validateRequiredParams({ bucket, token, filepath, meta })
+
+	if (typeof(meta) != 'object')
+		throw new Error(`meta must be an object (currently ${typeof(meta)})`)
+
+	const metaKeys = Object.keys(meta)
+
+	if (!metaKeys[0])
+		return { status:200, data:{ message: 'Void operation. No metadata were passed.' } }
+
+	const { ext } = urlHelper.getInfo(`https://neap.co/${filepath}`)
+	if (!ext)
+		throw new Error('Bucket\'s folders do not support metadata updates.')
+
+	const resourceUri = BUCKET_FILE_URL(bucket, filepath)
+
+	const { status, data } = yield fetch.get({ 
+		uri: resourceUri, 
+		headers: { 
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`			
+		}})
+
+	if (status == 404)
+		throw new Error(`Resource ${resourceUri} not found.`)
+
+	metaKeys.forEach(key => {
+		if (key == 'cacheControl' 
+			|| key == 'contentDisposition' 
+			|| key == 'contentEncoding' 
+			|| key == 'contentLanguage' 
+			|| key == 'contentType' 
+			|| key == 'eventBasedHold' 
+			|| key == 'temporaryHold')
+			data[key] = meta[key]
+		else {
+			if (!data.metadata)
+				data.metadata = {}
+			data.metadata[key] = meta[key]
+		}
+	})
+
+	return yield fetch.put({ uri: resourceUri, headers: {
+		'Content-Type': 'application/json',
+		Authorization: `Bearer ${token}`
+	}, body: JSON.stringify(data) })
+})
+
 module.exports = {
 	insert: putObject,
 	'get': getBucketFile,
@@ -524,6 +662,9 @@ module.exports = {
 		website: {
 			'get': getWebsiteSetup,
 			setup: setupWebsite
+		},
+		object: {
+			update: updateObjectMetadata
 		}
 	}
 }
