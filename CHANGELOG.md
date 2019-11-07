@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.15.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.2...v0.15.3) (2019-11-07)
+
+
+### Bug Fixes
+
+* Some popular file extensions are not supported (e.g., '.webp') ([c29b4a6](https://github.com/nicolasdao/google-cloud-bucket/commit/c29b4a6))
+
+
+
 ### [0.15.2](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.1...v0.15.2) (2019-10-27)
 
 
