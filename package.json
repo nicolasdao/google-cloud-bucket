@@ -45,6 +45,7 @@
     "fs-extra": "^7.0.1",
     "functional": "^1.0.0",
     "google-auto-auth": "^0.10.1",
+    "mime-types": "^2.1.24",
     "node-fetch": "^2.2.0",
     "shortid": "^2.2.13"
   }

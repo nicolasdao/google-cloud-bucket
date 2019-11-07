@@ -1,5 +1,6 @@
 const url = require('url')
 const path = require('path')
+const { getMimeType } = require('./fileHelper')
 
 const getUrlInfo = (uri, option={}) => {
 	if (uri) {
@@ -77,7 +78,8 @@ const isPopularImgExt = ext =>
 	ext == '.psd' ||
 	ext == '.svg' ||
 	ext == '.tif' ||
-	ext == '.tiff'
+	ext == '.tiff' ||
+	ext == '.webp'
 
 const isPopularFontExt = ext => 
 	ext == '.eot' ||
@@ -100,72 +102,11 @@ const makePageHtml = uri => {
 
 }
 
-const _supportedContentType = {
-	// web pages
-	'.asp': 'text/html',
-	'.aspx': 'text/html',
-	'.axd': 'text/html',
-	'.asx': 'text/html',
-	'.asmx': 'text/html',
-	'.ashx': 'text/html',
-	'.yaws': 'text/html',
-	'.html': 'text/html',
-	'.htm': 'text/html',
-	'.xhtml': 'text/html',
-	'.jhtml': 'text/html',
-	'.jsp': 'text/html',
-	'.jspx': 'text/html',
-	'.pl': 'text/html',
-	'.php': 'text/html',
-	'.php4': 'text/html',
-	'.php3': 'text/html',
-	'.phtml': 'text/html',
-	'.py': 'text/html',
-	'.rb': 'text/html',
-	'.rhtml': 'text/html',
-	'.shtml': 'text/html',
-	// web files
-	'.css': 'text/css',
-	'.js': 'text/javascript',
-	'.json': 'application/json',
-	'.xml': 'text/xml',
-	'.rss': 'text/xml',
-	'.pdf': 'application/pdf',
-	'.doc': 'application/msword',
-	'.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-	'.xls': 'application/vnd.ms-excel',
-	'.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-	'.ppt': 'application/vnd.ms-powerpoint',
-	'.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-	'.csv': 'text/csv',
-	// images
-	'.ai': 'application/postscript',
-	'.bmp': 'image/bmp',
-	'.gif': 'image/gif',
-	'.ico': 'image/x-icon',
-	'.jpeg': 'image/jpeg',
-	'.jpg': 'image/jpeg',
-	'.png': 'image/png',
-	'.ps': 'application/postscript',
-	'.psd': 'application/octet-stream',
-	'.svg': 'image/svg+xml',
-	'.tif': 'image/tiff',
-	'.tiff': 'image/tiff',
-	// font
-	'.eot': 'application/vnd.ms-fontobject',
-	'.woff2': 'font/woff2',
-	'.woff': 'application/font-woff',
-	'.ttf': 'application/font-sfnt',
-	'.otf': 'application/font-sfnt',
-	// text
-	'.txt': 'text/plain',
-	'.md': 'text/plain'
-}
 const _getContentType = (ext) => {
 	if (!ext)
 		return 'application/octet-stream'
 
-	const contentType = _supportedContentType[ext.toLowerCase()]	
+	const contentType = getMimeType(ext.toLowerCase().replace(/^\./, ''))
 	return contentType || 'application/octet-stream'
 }
 
