@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.15.4](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.3...v0.15.4) (2020-03-18)
+
+
+### Bug Fixes
+
+* travis deploy + vulnerabilities ([646b1b1](https://github.com/nicolasdao/google-cloud-bucket/commit/646b1b101c62183fbbd4af355ab8c190f9d80dc7))
+
 ### [0.15.3](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.2...v0.15.3) (2019-11-07)
 
 
