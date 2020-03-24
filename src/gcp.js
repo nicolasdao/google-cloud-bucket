@@ -135,7 +135,7 @@ const putObjectMultipart = (object, filePath, token, headers) => Promise.resolve
 		'',
 		`--${boundary}`,
 		`Content-Disposition: form-data; name="${file}"; filename="${file}"`,
-		`Content-Type: ${contentType}`,
+		`Content-Type: ${headers['Content-Type'] || headers['content-type'] || contentType}`,
 		'',
 		''
 	].join('\r\n')
