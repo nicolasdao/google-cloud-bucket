@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.15.5](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.4...v0.15.5) (2020-06-14)
+
+
+### Bug Fixes
+
+* Use user provided Content-Type for multipart object puts if provided. ([8ef4c14](https://github.com/nicolasdao/google-cloud-bucket/commit/8ef4c14c1772a6f0811610d04069a04637ed21ca))
+
 ### [0.15.4](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.3...v0.15.4) (2020-03-18)
 
 
