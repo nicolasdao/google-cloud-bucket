@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.15.6](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.5...v0.15.6) (2020-07-16)
+
+
+### Bug Fixes
+
+* Vulnerabilities ([dad75b7](https://github.com/nicolasdao/google-cloud-bucket/commit/dad75b70121090ac1b305e771cb6ea44bc35fc38))
+
 ### [0.15.5](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.4...v0.15.5) (2020-06-14)
 
 
