@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.16.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.6...v0.16.0) (2020-08-01)
+
+
+### Features
+
+* Add support for creating a client with environment variables ([23592ea](https://github.com/nicolasdao/google-cloud-bucket/commit/23592ea47902e5e20aad90417e139bd00a67aed2))
+
 ### [0.15.6](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.5...v0.15.6) (2020-07-16)
 
 
