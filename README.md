@@ -4,12 +4,12 @@ __*Google Cloud Bucket*__ is a node.js package to manage Google Cloud Buckets an
 # Table of Contents
 
 > * [Install](#install) 
-> * [How To Use It](#how-to-use-it) 
+> * [Getting started](#getting-started) 
 >	- [Prerequisite](#prerequisite)
 >	- [Basics](#basics) 
->	- [Configuring Your Bucket Or Your File (CORS, Public, Static Website)](#configuring-your-bucket-or-your-file) 
->	- [Zipping Files](#zipping-files) 
->	- [3 Ways To Create a Client](#3-ways-to-create-a-client)
+>	- [Configuring your bucket or your file (CORS, Public, Static Website)](#configuring-your-bucket-or-your-file) 
+>	- [Zipping files](#zipping-files) 
+>	- [3 ways to create a client](#3-ways-to-create-a-client)
 >	- [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 >	- [Using An External OAuth2 Token](#using-an-external-oauth2-token)
 >	- [Performance Tips](#performance-tips)
@@ -29,21 +29,21 @@ __*Google Cloud Bucket*__ is a node.js package to manage Google Cloud Buckets an
 npm i google-cloud-bucket --save
 ```
 
-# How To Use It
+# Getting started
 ## Prerequisite
 
 Before using this package, you must first:
 
 1. Have a Google Cloud Account.
-
-2. Have a Service Account set up with the following 2 roles:
+2. Have a Service Account set up with the following three roles:
 	- `roles/storage.objectCreator`
 	- `roles/storage.objectAdmin` (only if you want to update access to object or create/delete buckets)
 	- `roles/storage.admin` (only if you want to update access to an entire bucket)
-
-3. Get the JSON keys file for that Service Account above
-
-4. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
+3. Get the JSON keys file for that Service Account above.
+4. Save that JSON key into a `service-account.json` file (make sure it is located under a path that is accessible to your app), or save the following properties to either manually set up the client or set up environment variables:
+	- `project_id`
+	- `client_email`
+	- `private_key`
 
 ## Basics
 
@@ -164,7 +164,7 @@ storage.bucket('your-bucket').object('a-path/').list()
 	.then(files => console.log(files))
 ```
 
-## Configuring Your Bucket Or Your File
+## Configuring your bucket or your file
 ### Publicly Readable Config
 
 This allows to make any files publicly readable by anybody on the web. That's usefull if you want to host a website, or publish data (e.g., RSS feed).
@@ -281,7 +281,7 @@ bucket.website.setup({
 	notFoundPage: '404.html'
 }).then(console.log)
 ```
-## Zipping Files
+## Zipping files
 
 ```js
 const bucket = storage.bucket('your-bucket-name')
@@ -347,7 +347,7 @@ bucket.object('some-folder-path').zip({
 })
 ```
 
-## 3 Ways To Create a Client
+## 3 ways to create a client
 ### 1. Using A `service-account.json`
 
 We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
@@ -358,24 +358,37 @@ const storage = client.new({
 })
 ```
 
-### 2. Using a ClientEmail PrivateKey & ProjectId
+### 2. Using explicit credentials
 
 This method is similar to the previous one. You should have dowloaded a `service-account.json`, but instead of providing its path, you provide some of its details explicitly:
 
 ```js
 const storage = client.new({ 
-	clientEmail: 'some-client-email', 
-	privateKey: 'some-secret-private-key',
-	projectId: 'your-project-id'
+	credentials: {
+		project_id: 'your-project-id', 
+		client_email:'something-1234@your-project-id.iam.gserviceaccount.com', 
+		private_key: '-----BEGIN PRIVATE KEY-----\n123456789-----END PRIVATE KEY-----\n'
+	}
 })
 ```
 
-### 3. Using a ProjectId
-
-If you're managing an Google Cloud OAuth2 token yourself (most likely using the [`google-auto-auth`](https://www.npmjs.com/package/google-auto-auth) library), you are not required to explicitly pass account details like what was done in the previous 2 approaches. You can simply specify the `projectId`:
+### 3. Using environment variables
 
 ```js
-const storage = client.new({ projectId: 'your-project-id' })
+const storage = client.new()
+```
+
+The above will only work if all the following environment variables are set:
+- `GOOGLE_CLOUD_BUCKET_PROJECT_ID` or `GOOGLE_CLOUD_PROJECT_ID`
+- `GOOGLE_CLOUD_BUCKET_CLIENT_EMAIL` or `GOOGLE_CLOUD_CLIENT_EMAIL`
+- `GOOGLE_CLOUD_BUCKET_PRIVATE_KEY` or `GOOGLE_CLOUD_PRIVATE_KEY`
+
+### 4. Using a project_id
+
+If you're managing an Google Cloud OAuth2 token yourself (most likely using the [`google-auto-auth`](https://www.npmjs.com/package/google-auto-auth) library), you are not required to explicitly pass account details like what was done in the previous 2 approaches. You can simply specify the `project_id`:
+
+```js
+const storage = client.new({ credentials: { project_id: 'your-project-id'} })
 ```
 
 Refer to the next section to see how to pass an OAuth2 token.
@@ -419,7 +432,7 @@ The above example only returns the `name` field. The full list of supported fiel
 # Full API Doc
 ## Storage API
 
-> To create the `storage` object, please refer to the previous section [3 Ways To Create a Client](#3-ways-to-create-a-client). 
+> To create the `storage` object, please refer to the previous section [3 ways to create a client](#3-ways-to-create-a-client). 
 
 This object allows to perform most read/write operations. It uses a string representing the path to where the objects or folders are. If using path is the stragegy you decide to employ to manage objects, then the Storage API is the way to go. If, on the contrary, you need to reason based on a specific bucket or a specific object, then it is recommended to use the [Bucket API](#bucket-api) or the [BucketObject API](#bucketobject-api). 
 

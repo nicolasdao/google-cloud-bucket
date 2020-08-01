@@ -139,55 +139,49 @@ const _filterBucketObjects = (data, options) => {
 const _getPublicUri = filePath => `https://storage.googleapis.com/${(filePath || '').replace(/^\/*/, '').split('/').map(p => encodeURIComponent(p)).join('/')}`
 
 /**
- * [description]
- * @param  {String} config.jsonKeyFile 	Path to the service-account.json file. If specified, 'clientEmail', 'privateKey', 'projectId' are not required.
- * @param  {String} config.clientEmail 	Email used in the service-account.json. If specified, 'jsonKeyFile' is not required, but 'privateKey', 'projectId' are.
- * @param  {String} config.privateKey 	Private key used in the service-account.json. If specified, 'jsonKeyFile' is not required, but 'clientEmail', 'projectId' are.
- * @param  {String} config.projectId 	Project Id. Only required if 'jsonKeyFile' is not specified.
+ * Creates a new Google Cloud Bucket client. 
+ * 
+ * @param  {String} config.jsonKeyFile 					Path to the service-account.json file. If specified, 'clientEmail', 'privateKey', 'projectId' are not required.
+ * @param  {String} config.credentials.project_id
+ * @param  {String} config.credentials.client_email
+ * @param  {String} config.credentials.private_key
+ * @param  {String} config.clientEmail 					Deprecated. Use config.credentials.client_email instead.
+ * @param  {String} config.privateKey 					Deprecated. Use config.credentials.private_key instead.
+ * @param  {String} config.projectId 					Deprecated. Use config.credentials.project_id instead.
  * @return {Object}        				
  */
-const createClient = (config) => {
+const createClient = config => {
 	// 1. Organize the input into usable bits
-	config = config || {}
-	const { jsonKeyFile, clientEmail, privateKey } = config
-	const [projectId, _getToken] = jsonKeyFile || clientEmail || privateKey 
-		? (() => {
-			if (jsonKeyFile) {
-				const { project_id } = require(jsonKeyFile)
-				if (!project_id)
-					throw new Error(`The service account JSON key file ${jsonKeyFile} does not contain a 'project_id' field.`)
-
-				const auth = googleAuth({ 
-					keyFilename: jsonKeyFile,
-					scopes: ['https://www.googleapis.com/auth/cloud-platform']
-				})
-
-				return [project_id, (t => getToken(auth, t))]
-			} else {
-				if (clientEmail && !privateKey)
-					throw new Error('Missing required argument \'privateKey\'. When property \'clientEmail\' is defined, property \'privateKey\' is required.')
-				if (!clientEmail && privateKey)
-					throw new Error('Missing required argument \'clientEmail\'. When property \'privateKey\' is defined, property \'clientEmail\' is required.')
-				if (!config.projectId)
-					throw new Error('Missing required argument \'projectId\'. When properties \'clientEmail\', \'privateKey\' are defined, the \'projectId\' is required.')
-
-				const auth = googleAuth({ 
-					credentials: {
-						client_email: clientEmail,
-						private_key: privateKey
-					},
-					scopes: ['https://www.googleapis.com/auth/cloud-platform']
-				}) 
-
-				return [config.projectId, (t => getToken(auth, t))]
-			}
-		})()
-		: (() => {
-			if (!config.projectId)
-				throw new Error('Missing required argument \'projectId\'. When properties \'jsonKeyFile\', \'clientEmail\', \'privateKey\' are not defined, the \'projectId\' is required.')
-			return [config.projectId, (t => getToken(null, t))]
-		})()
+	let { jsonKeyFile, clientEmail, privateKey, projectId, credentials } = config || {}
+	let { project_id, client_email, private_key } = credentials ? credentials : jsonKeyFile ? require(jsonKeyFile) : {}
 	
+	projectId = projectId || project_id || process.env.GOOGLE_CLOUD_BUCKET_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID
+	client_email = clientEmail || client_email || process.env.GOOGLE_CLOUD_BUCKET_CLIENT_EMAIL || process.env.GOOGLE_CLOUD_CLIENT_EMAIL
+	private_key = privateKey || private_key || process.env.GOOGLE_CLOUD_BUCKET_PRIVATE_KEY || process.env.GOOGLE_CLOUD_PRIVATE_KEY
+
+	const errorHeader = credentials 
+		? 'The \'credentials\' argument is missing the required' 
+		: jsonKeyFile 
+			? `The service account JSON key file ${jsonKeyFile} is missing the required` 
+			: 'None of the available methods to pass credentials to the BigQuery client (i.e., \'credentials\' object, \'jsonKeyFile\' path or environment variables) define the required'
+
+	if (!projectId)
+		throw new Error(`${errorHeader} 'project_id' field.`)
+
+	let _getToken
+	if (!client_email || !private_key)
+		_getToken = t => getToken(null, t)
+	else {
+		const auth = googleAuth({ 
+			credentials: {
+				client_email,
+				private_key
+			},
+			scopes: ['https://www.googleapis.com/auth/cloud-platform']
+		})
+		_getToken = t => getToken(auth, t)
+	}
+
 	// 2. Create the client methods.
 	const putObject = (object, filePath, options={}) => _getToken(options.token).then(token => _retryPutFn(() => gcp.insert(object, filePath, token, options), options))
 		.then(_throwHttpErrorIfBadStatus)
