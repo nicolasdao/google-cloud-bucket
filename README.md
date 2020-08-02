@@ -9,7 +9,7 @@ __*Google Cloud Bucket*__ is a node.js package to manage Google Cloud Buckets an
 >	- [Basics](#basics) 
 >	- [Configuring your bucket or your file (CORS, Public, Static Website)](#configuring-your-bucket-or-your-file) 
 >	- [Zipping files](#zipping-files) 
->	- [3 ways to create a client](#3-ways-to-create-a-client)
+>	- [Four ways to create a client](#four-ways-to-create-a-client)
 >	- [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 >	- [Using An External OAuth2 Token](#using-an-external-oauth2-token)
 >	- [Performance Tips](#performance-tips)
@@ -347,7 +347,7 @@ bucket.object('some-folder-path').zip({
 })
 ```
 
-## 3 ways to create a client
+## Four ways to create a client
 ### 1. Using A `service-account.json`
 
 We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
@@ -382,6 +382,8 @@ The above will only work if all the following environment variables are set:
 - `GOOGLE_CLOUD_BUCKET_PROJECT_ID` or `GOOGLE_CLOUD_PROJECT_ID`
 - `GOOGLE_CLOUD_BUCKET_CLIENT_EMAIL` or `GOOGLE_CLOUD_CLIENT_EMAIL`
 - `GOOGLE_CLOUD_BUCKET_PRIVATE_KEY` or `GOOGLE_CLOUD_PRIVATE_KEY`
+
+> WARNING: If you're using [NPM's `dotenv`](https://www.npmjs.com/package/dotenv), wrap your PRIVATE_KEY between double-quotes, otherwise some characters are escaped which corrupts the key.
 
 ### 4. Using a project_id
 
