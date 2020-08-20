@@ -364,6 +364,8 @@ This library supports four different ways to create a client. The first method i
 ### User the hosting identity
 
 ```js
+const { client } = require('google-cloud-bucket')
+
 const storage = client.new()
 ```
 
@@ -389,6 +391,9 @@ When developing on your local environment, use either #2 or #3. #3 is equivalent
 We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
 
 ```js
+const { join } = require('path')
+const { client } = require('google-cloud-bucket')
+
 const storage = client.new({ 
 	jsonKeyFile: join(__dirname, './service-account.json') 
 })
@@ -399,6 +404,8 @@ const storage = client.new({
 This method is similar to the previous one. You should have dowloaded a `service-account.json`, but instead of providing its path, you provide some of its details explicitly:
 
 ```js
+const { client } = require('google-cloud-bucket')
+
 const storage = client.new({ 
 	credentials: {
 		project_id: 'your-project-id', 
@@ -411,6 +418,8 @@ const storage = client.new({
 ### Using environment variables
 
 ```js
+const { client } = require('google-cloud-bucket')
+
 const storage = client.new()
 ```
 
