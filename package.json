@@ -33,8 +33,9 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "eslint": "^6.8.0",
-    "mocha": "^8.0.1",
-    "standard-version": "^8.0.2"
+    "jsonwebtoken": "^8.5.1",
+    "mocha": "^8.1.1",
+    "standard-version": "^9.0.0"
   },
   "dependencies": {
     "anymatch": "^2.0.0",
@@ -44,7 +45,7 @@
     "core-async": "0.0.5",
     "fs-extra": "^7.0.1",
     "functional": "^1.0.0",
-    "google-auto-auth": "^0.10.1",
+    "google-auth-library": "^6.0.6",
     "mime-types": "^2.1.24",
     "node-fetch": "^2.2.0",
     "shortid": "^2.2.13"

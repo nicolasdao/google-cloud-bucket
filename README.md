@@ -9,7 +9,11 @@ __*Google Cloud Bucket*__ is a node.js package to manage Google Cloud Buckets an
 >	- [Basics](#basics) 
 >	- [Configuring your bucket or your file (CORS, Public, Static Website)](#configuring-your-bucket-or-your-file) 
 >	- [Zipping files](#zipping-files) 
->	- [3 ways to create a client](#3-ways-to-create-a-client)
+>	- [4 ways to create a client](#3-ways-to-create-a-client)
+>		- [User the hosting identity](#user-the-hosting-identity)
+>		- [Using a `service-account.json`](#using-a-service-accountjson)
+>		- [Using explicit credentials](#using-explicit-credentials)
+>		- [Using environment variables](#using-environment-variables)
 >	- [Extra Precautions To Make Robust Queries](#extra-precautions-to-make-robust-queries)
 >	- [Using An External OAuth2 Token](#using-an-external-oauth2-token)
 >	- [Performance Tips](#performance-tips)
@@ -39,8 +43,8 @@ Before using this package, you must first:
 	- `roles/storage.objectCreator`
 	- `roles/storage.objectAdmin` (only if you want to update access to object or create/delete buckets)
 	- `roles/storage.admin` (only if you want to update access to an entire bucket)
-3. Get the JSON keys file for that Service Account above.
-4. Save that JSON key into a `service-account.json` file (make sure it is located under a path that is accessible to your app), or save the following properties to either manually set up the client or set up environment variables:
+3. Get the JSON keys file for that Service Account above, or set up an environment with the appropriate service identity (more about this in the [4 ways to create a client](#3-ways-to-create-a-client) section).
+4. If you're using a service account JSON key file, then save that JSON key into a `service-account.json` file (make sure it is located under a path that is accessible to your app), or save the following properties to either manually set up the client or set up environment variables:
 	- `project_id`
 	- `client_email`
 	- `private_key`
@@ -51,6 +55,8 @@ Before using this package, you must first:
 const { join } = require('path')
 const { client } = require('google-cloud-bucket')
 
+// This is one of the many options to create a storage client. To see all the different
+// way to create a client, please refer to the '4 ways to create a client' section.
 const storage = client.new({ 
 	jsonKeyFile: join(__dirname, './service-account.json') 
 })
@@ -347,8 +353,38 @@ bucket.object('some-folder-path').zip({
 })
 ```
 
-## 3 ways to create a client
-### 1. Using A `service-account.json`
+## 4 ways to create a client
+
+This library supports four different ways to create a client. The first method is the recommended way:
+1. [User the hosting identity](#user-the-hosting-identity)
+2. [Using a `service-account.json`](#using-a-service-accountjson)
+3. [Using explicit credentials](#using-explicit-credentials)
+4. [Using environment variables](#using-environment-variables)
+
+### User the hosting identity
+
+```js
+const storage = client.new()
+```
+
+In this case, the package fetches the credentials automatically. It will try three different techniques to get those data, and if none of them work, an error is thrown. Those techniques are:
+1. If the code is hosted on GCP (e.g., Cloud Compute, App Engine, Cloud Function or Cloud Run) then the credentials are extracted from the service account associated with the GCP service.
+2. If the `GOOGLE_APPLICATION_CREDENTIALS` environment variable exists, its value is supposed to be the path to a service account JSON key file on the hosting machine.
+3. If the `~/.config/gcloud/application_default_credentials.json` file exists, then the credentials it contains are used (more about setting that file up below).
+
+When developing on your local environment, use either #2 or #3. #3 is equivalent to being invited by the SysAdmin to the project and granted specific privileges. To set up `~/.config/gcloud/application_default_credentials.json`, follow those steps:
+
+- Make sure you have a Google account that can access both the GCP project and the resources you need on GCP. 
+- Install the `GCloud CLI` on your environment.
+- Execute the following commands:
+	```
+	gcloud auth login
+	gcloud config set project <YOUR_GCP_PROJECT_HERE>
+	gcloud auth application-default login
+	```
+	The first command logs you in. The second command sets the `<YOUR_GCP_PROJECT_HERE>` as your default project. Finally, the third command creates a new `~/.config/gcloud/application_default_credentials.json` file with the credentials you need for the `<YOUR_GCP_PROJECT_HERE>` project.
+
+### Using a `service-account.json`
 
 We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
 
@@ -358,7 +394,7 @@ const storage = client.new({
 })
 ```
 
-### 2. Using explicit credentials
+### Using explicit credentials
 
 This method is similar to the previous one. You should have dowloaded a `service-account.json`, but instead of providing its path, you provide some of its details explicitly:
 
@@ -372,7 +408,7 @@ const storage = client.new({
 })
 ```
 
-### 3. Using environment variables
+### Using environment variables
 
 ```js
 const storage = client.new()

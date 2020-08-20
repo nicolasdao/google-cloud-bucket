@@ -8,7 +8,7 @@
 
 const co = require('co')
 const { throttle } = require('core-async')
-const googleAuth = require('google-auto-auth')
+const { GoogleAuth } = require('google-auth-library')
 const archiver = require('archiver')
 const fs = require('fs')
 const { toBuffer } = require('convert-stream')
@@ -17,13 +17,6 @@ const { Writable } = require('stream')
 const anymatch = require('anymatch')
 const { promise: { retry }, collection } = require('./src/utils')
 const gcp = require('./src/gcp')
-
-const getToken = (auth, token) => {
-	if (token || !auth)
-		return Promise.resolve(token)
-	else 
-		return new Promise((onSuccess, onFailure) => auth.getToken((err, _token) => err ? onFailure(err) : onSuccess(_token))) 
-}
 
 const _retryFn = (fn, options={}) => retry(
 	fn, 
@@ -159,49 +152,47 @@ const createClient = config => {
 	client_email = clientEmail || client_email || process.env.GOOGLE_CLOUD_BUCKET_CLIENT_EMAIL || process.env.GOOGLE_CLOUD_CLIENT_EMAIL
 	private_key = privateKey || private_key || process.env.GOOGLE_CLOUD_BUCKET_PRIVATE_KEY || process.env.GOOGLE_CLOUD_PRIVATE_KEY
 
-	const errorHeader = credentials 
-		? 'The \'credentials\' argument is missing the required' 
-		: jsonKeyFile 
-			? `The service account JSON key file ${jsonKeyFile} is missing the required` 
-			: 'None of the available methods to pass credentials to the BigQuery client (i.e., \'credentials\' object, \'jsonKeyFile\' path or environment variables) define the required'
-
-	if (!projectId)
-		throw new Error(`${errorHeader} 'project_id' field.`)
-
-	let _getToken
-	if (!client_email || !private_key)
-		_getToken = t => getToken(null, t)
-	else {
-		const auth = googleAuth({ 
-			credentials: {
-				client_email,
-				private_key
-			},
-			scopes: ['https://www.googleapis.com/auth/cloud-platform']
-		})
-		_getToken = t => getToken(auth, t)
+	const authConfig = {
+		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	}
 
+	if (client_email && private_key)
+		authConfig.credentials = { client_email, private_key }
+
+	const auth = new GoogleAuth(authConfig)
+	const getToken = existingToken => existingToken ? Promise.resolve(existingToken) : auth.getAccessToken()
+
+	const getProjectId = () => Promise.resolve(null)
+		.then(() => projectId ? projectId : auth.getProjectId())
+		.then(id => {
+			if (!id)
+				throw new Error('Missing required \'projectId\'. The \'projectId\' was not defined explicitly nor was it found in the application default credentials.')
+			if (!projectId)
+				projectId = id 
+
+			return id
+		})
+
 	// 2. Create the client methods.
-	const putObject = (object, filePath, options={}) => _getToken(options.token).then(token => _retryPutFn(() => gcp.insert(object, filePath, token, options), options))
+	const putObject = (object, filePath, options={}) => getToken(options.token).then(token => _retryPutFn(() => gcp.insert(object, filePath, token, options), options))
 		.then(_throwHttpErrorIfBadStatus)
 		.then(({ data }) => data)
-	const getObject = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
+	const getObject = (bucket, filePath, options={}) => getToken(options.token).then(token => _retryFn(() => gcp.get(bucket, filePath, token, options), options))
 		.then(res => res && res.status == 404 ? { data:null } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data)
-	const deleteObject = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.delete(bucket, filePath, token, options), options))
+	const deleteObject = (bucket, filePath, options={}) => getToken(options.token).then(token => _retryFn(() => gcp.delete(bucket, filePath, token, options), options))
 		.then(res => res && res.status == 404 ? { data:null } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data)
-	const listObjectsMetadata = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token, options), options)
+	const listObjectsMetadata = (bucket, filePath, options={}) => getToken(options.token).then(token => _retryFn(() => gcp.filterFiles(bucket, filePath, token, options), options)
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => _filterBucketObjects(data, options))
 		.then(data => data ? data.map(d => { d.publicUri = _getPublicUri(`${bucket}/${filePath}`);return d }) : data))
-	const listBuckets = (options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.bucket.list(projectId, token, options), options)
+	const listBuckets = (options={}) => getProjectId().then(_projectId => getToken(options.token).then(token => _retryFn(() => gcp.bucket.list(_projectId, token, options), options))
 		.then(res => res && res.status == 404 ? { data:[] } : _throwHttpErrorIfBadStatus(res))
 		.then(({ data }) => data))
 	
-	const objectExists = (bucket, filePath, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))
-	const getBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.config.get(bucket, token), options).then(({ data }) => data))
+	const objectExists = (bucket, filePath, options={}) => getToken(options.token).then(token => _retryFn(() => gcp.doesFileExist(bucket, filePath, token), options).then(({ data }) => data))
+	const getBucket = (bucket, options={}) => getToken(options.token).then(token => _retryFn(() => gcp.config.get(bucket, token), options).then(({ data }) => data))
 	const getObjectInfo = (bucket, filePath, options) => listObjectsMetadata(bucket, filePath, options || {}).then(data => {
 		if (!data)
 			return null 
@@ -211,7 +202,7 @@ const createClient = config => {
 			return null
 	})
 
-	const createBucket = (bucket, options={}) => _getToken(options.token).then(token => gcp.bucket.create(bucket, projectId, token, options)).then(({ status, data }) => {
+	const createBucket = (bucket, options={}) => getProjectId().then(_projectId => getToken(options.token).then(token => gcp.bucket.create(bucket, _projectId, token, options))).then(({ status, data }) => {
 		if (status > 299) {
 			let errMsg 
 			try {
@@ -224,7 +215,7 @@ const createClient = config => {
 		
 		return data
 	})
-	const deleteBucket = (bucket, options={}) => _getToken(options.token).then(token => _retryFn(() => gcp.bucket.delete(bucket, token))).then(({ status, data }) => {
+	const deleteBucket = (bucket, options={}) => getToken(options.token).then(token => _retryFn(() => gcp.bucket.delete(bucket, token))).then(({ status, data }) => {
 		let d = data
 		if (data instanceof Buffer) {
 			const s = data.toString()
@@ -238,17 +229,17 @@ const createClient = config => {
 			throw new Error(`Delete failed: ${JSON.stringify(d)}`)
 		return d
 	})
-	const isBucketPublic = (bucket, options={}) => _getToken(options.token).then(token => gcp.config.isBucketPublic(bucket, token))
-	const isCorsSetUp = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
-	const setupCors = (bucket, corsConfig, options={}) => _getToken(options.token).then(token => gcp.config.cors.setup(bucket, corsConfig, token, options)).then(({ data }) => data)
-	const disableCors = (bucket, options={}) => _getToken(options.token).then(token => gcp.config.cors.disable(bucket, token)).then(({ data }) => data)
-	const setupWebsite = (bucket, webConfig, options={}) => _getToken(options.token).then(token => gcp.config.website.setup(bucket, webConfig, token)).then(({ data }) => data)
-	const updateConfig = (bucket, config={}, options={}) => _getToken(options.token).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
-	const addPublicAccess = (filePath, options={}) => _getToken(options.token).then(token => {
+	const isBucketPublic = (bucket, options={}) => getToken(options.token).then(token => gcp.config.isBucketPublic(bucket, token))
+	const isCorsSetUp = (bucket, corsConfig, options={}) => getToken(options.token).then(token => gcp.config.cors.isCorsSetup(bucket, corsConfig, token))
+	const setupCors = (bucket, corsConfig, options={}) => getToken(options.token).then(token => gcp.config.cors.setup(bucket, corsConfig, token, options)).then(({ data }) => data)
+	const disableCors = (bucket, options={}) => getToken(options.token).then(token => gcp.config.cors.disable(bucket, token)).then(({ data }) => data)
+	const setupWebsite = (bucket, webConfig, options={}) => getToken(options.token).then(token => gcp.config.website.setup(bucket, webConfig, token)).then(({ data }) => data)
+	const updateConfig = (bucket, config={}, options={}) => getToken(options.token).then(token => gcp.config.update(bucket, config, token)).then(({ data }) => data)
+	const addPublicAccess = (filePath, options={}) => getToken(options.token).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.addPublicAccess(bucket, file, token)
 	}).then(({ data }) => data)
-	const removePublicAccess = (filePath, options={}) => _getToken(options.token).then(token => {
+	const removePublicAccess = (filePath, options={}) => getToken(options.token).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.removePublicAccess(bucket, file, token)
 	}).then(({ data }) => data)
@@ -273,7 +264,7 @@ const createClient = config => {
 		return getObject(bucket, file, options)
 	})
 
-	const updateObjectHeaders = (filePath, meta, options={}) => _getToken(options.token).then(token => {
+	const updateObjectHeaders = (filePath, meta, options={}) => getToken(options.token).then(token => {
 		const { bucket, file } = _getBucketAndPathname(filePath, { ignoreMissingFile: true })
 		return gcp.config.object.update(bucket, file, meta, token)
 	}).then(({ data }) => data)
