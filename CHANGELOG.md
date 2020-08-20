@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.16.0...v1.0.0) (2020-08-20)
+
+
+### Features
+
+* Add support for parameterless client creation using the application default credentials ([750e7fa](https://github.com/nicolasdao/google-cloud-bucket/commit/750e7fad7b141eed490aa450d6a344304caddd5d))
+
 ## [0.16.0](https://github.com/nicolasdao/google-cloud-bucket/compare/v0.15.6...v0.16.0) (2020-08-01)
 
 
