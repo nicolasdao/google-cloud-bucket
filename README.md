@@ -9,7 +9,7 @@ __*Google Cloud Bucket*__ is a node.js package to manage Google Cloud Buckets an
 >	- [Basics](#basics) 
 >	- [Configuring your bucket or your file (CORS, Public, Static Website)](#configuring-your-bucket-or-your-file) 
 >	- [Zipping files](#zipping-files) 
->	- [4 ways to create a client](#3-ways-to-create-a-client)
+>	- [Four ways to create a client](#four-ways-to-create-a-client)
 >		- [User the hosting identity](#user-the-hosting-identity)
 >		- [Using a `service-account.json`](#using-a-service-accountjson)
 >		- [Using explicit credentials](#using-explicit-credentials)
@@ -353,7 +353,7 @@ bucket.object('some-folder-path').zip({
 })
 ```
 
-## 4 ways to create a client
+## Four ways to create a client
 
 This library supports four different ways to create a client. The first method is the recommended way:
 1. [User the hosting identity](#user-the-hosting-identity)
@@ -419,13 +419,7 @@ The above will only work if all the following environment variables are set:
 - `GOOGLE_CLOUD_BUCKET_CLIENT_EMAIL` or `GOOGLE_CLOUD_CLIENT_EMAIL`
 - `GOOGLE_CLOUD_BUCKET_PRIVATE_KEY` or `GOOGLE_CLOUD_PRIVATE_KEY`
 
-### 4. Using a project_id
-
-If you're managing an Google Cloud OAuth2 token yourself (most likely using the [`google-auto-auth`](https://www.npmjs.com/package/google-auto-auth) library), you are not required to explicitly pass account details like what was done in the previous 2 approaches. You can simply specify the `project_id`:
-
-```js
-const storage = client.new({ credentials: { project_id: 'your-project-id'} })
-```
+> WARNING: If you're using [NPM's `dotenv`](https://www.npmjs.com/package/dotenv), wrap your PRIVATE_KEY between double-quotes, otherwise some characters are escaped which corrupts the key.
 
 Refer to the next section to see how to pass an OAuth2 token.
 
