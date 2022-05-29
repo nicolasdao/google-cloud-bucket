@@ -43,7 +43,7 @@
     "co": "^4.6.0",
     "convert-stream": "^1.0.2",
     "core-async": "0.0.5",
-    "fs-extra": "^7.0.1",
+    "fs-extra": "^8.0.0",
     "functional": "^1.0.0",
     "google-auth-library": "^6.0.6",
     "mime-types": "^2.1.24",
