@@ -33,7 +33,7 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "eslint": "^6.8.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "mocha": "^8.1.1",
     "standard-version": "^9.0.0"
   },
